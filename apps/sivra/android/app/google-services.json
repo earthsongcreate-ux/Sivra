@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "709805399177",
+    "project_id": "project-fc7d7ede-835b-4486-95a",
+    "storage_bucket": "project-fc7d7ede-835b-4486-95a.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:709805399177:android:941f67063fd31dc019fa58",
+        "android_client_info": {
+          "package_name": "com.veloranlabs.sivra"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDUuJ9JF9xziE7HQ5zjrl-NbkeSaKBqnR4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
