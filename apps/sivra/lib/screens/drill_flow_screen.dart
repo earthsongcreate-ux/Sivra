@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 import '../data/mock_daily_pack.dart';
 import '../models/drill_item.dart';
+import '../services/firestore_service.dart';
+import '../utils/day_id.dart';
 import 'source_sheet.dart';
 
 class DrillFlowScreen extends StatefulWidget {
@@ -27,7 +30,7 @@ class _DrillFlowScreenState extends State<DrillFlowScreen> {
 
   void _next() {
     if (_index >= _items.length - 1) {
-      Navigator.of(context).pop();
+      _finish();
       return;
     }
 
@@ -38,6 +41,23 @@ class _DrillFlowScreenState extends State<DrillFlowScreen> {
         _articulationController.clear();
       }
     });
+  }
+
+  Future<void> _finish() async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid != null) {
+      await FirestoreService.instance.markDailyCompleted(
+        uid: uid,
+        dayId: dayIdFromDate(DateTime.now()),
+        itemCount: _items.length,
+      );
+    }
+
+    if (!mounted) {
+      return;
+    }
+
+    Navigator.of(context).pop();
   }
 
   void _reveal() {
@@ -199,4 +219,3 @@ class _DrillFlowScreenState extends State<DrillFlowScreen> {
     );
   }
 }
-

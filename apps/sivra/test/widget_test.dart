@@ -11,7 +11,10 @@ void main() {
         theme: SivraTheme.light(),
         darkTheme: SivraTheme.dark(),
         themeMode: ThemeMode.dark,
-        home: const OnboardingScreen(),
+        home: OnboardingScreen(
+          uid: 'test',
+          onCompleted: () {},
+        ),
       ),
     );
 

@@ -1,9 +1,17 @@
 import 'package:flutter/material.dart';
 
+import '../services/firestore_service.dart';
 import 'today_screen.dart';
 
 class OnboardingScreen extends StatefulWidget {
-  const OnboardingScreen({super.key});
+  final String uid;
+  final VoidCallback onCompleted;
+
+  const OnboardingScreen({
+    super.key,
+    required this.uid,
+    required this.onCompleted,
+  });
 
   @override
   State<OnboardingScreen> createState() => _OnboardingScreenState();
@@ -11,6 +19,7 @@ class OnboardingScreen extends StatefulWidget {
 
 class _OnboardingScreenState extends State<OnboardingScreen> {
   final Set<String> _selected = {};
+  bool _saving = false;
 
   static const _options = <String>[
     'Product',
@@ -20,6 +29,29 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   ];
 
   bool get _canContinue => _selected.isNotEmpty && _selected.length <= 3;
+
+  Future<void> _continue() async {
+    if (!_canContinue || _saving) {
+      return;
+    }
+
+    setState(() {
+      _saving = true;
+    });
+
+    await FirestoreService.instance.upsertProfile(
+      uid: widget.uid,
+      focusAreas: _selected.toList(),
+    );
+
+    if (!mounted) {
+      return;
+    }
+
+    widget.onCompleted();
+
+    Navigator.of(context).pushReplacementNamed(TodayScreen.routeName);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -97,14 +129,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             SizedBox(
               width: double.infinity,
               child: FilledButton(
-                onPressed: _canContinue
-                    ? () {
-                        Navigator.of(context).pushReplacementNamed(
-                          TodayScreen.routeName,
-                        );
-                      }
-                    : null,
-                child: const Text('Continue'),
+                onPressed: _canContinue && !_saving ? _continue : null,
+                child: _saving ? const Text('Saving…') : const Text('Continue'),
               ),
             ),
           ],
@@ -113,4 +139,3 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     );
   }
 }
-
