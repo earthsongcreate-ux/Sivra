@@ -1,0 +1,780 @@
+diff --git a/apps/sivra/lib/data/mock_daily_pack.dart b/apps/sivra/lib/data/mock_daily_pack.dart
+new file mode 100644
+index 0000000..b47423b
+--- /dev/null
++++ b/apps/sivra/lib/data/mock_daily_pack.dart
+@@ -0,0 +1,76 @@
++import '../models/drill_item.dart';
++
++class MockDailyPack {
++  static const items = <DrillItem>[
++    DrillItem(
++      id: 'b1',
++      type: DrillItemType.briefing,
++      prompt: 'A major model capability shift and what it changes for product teams.',
++      answer: 'Focus on workflows, evals, and distribution. Model gains compress feature timelines.',
++      explanation: 'Treat models as commodities. Build defensible workflows, data loops, and trust.',
++      source: DrillItemSource(
++        title: 'Model capabilities update',
++        publisher: 'Trusted publication',
++        dateLabel: 'Today',
++        url: 'https://example.com',
++        snippet: 'Summary of the capability shift and implications for builders.',
++      ),
++    ),
++    DrillItem(
++      id: 'b2',
++      type: DrillItemType.briefing,
++      prompt: 'A notable AI platform move (API/pricing/policy) and what it implies for startups.',
++      answer: 'Assume pricing/policies change. Design provider-agnostic routing and caching.',
++      explanation: 'Avoid lock-in. Own prompts, evals, and routing in your backend.',
++      source: DrillItemSource(
++        title: 'Platform policy change',
++        publisher: 'Industry source',
++        dateLabel: 'Today',
++        url: 'https://example.com',
++        snippet: 'Pricing or policy changes that affect cost and reliability.',
++      ),
++    ),
++    DrillItem(
++      id: 'd1',
++      type: DrillItemType.concept,
++      prompt: 'Model vs product moat: what can’t be copied in 90 days?',
++      answer: 'Workflow integration, distribution, proprietary data loops, and trust.',
++      explanation: 'If a competitor can replicate it quickly, it is not a moat.',
++    ),
++    DrillItem(
++      id: 'd2',
++      type: DrillItemType.decision,
++      prompt: 'You have one engineer-week: ship evals, ship features, or reduce latency—pick and justify.',
++      answer: 'Evals first for safety and velocity, then latency; features follow durable quality.',
++      explanation: 'Evals prevent regressions and make iteration safer and faster.',
++    ),
++    DrillItem(
++      id: 'd3',
++      type: DrillItemType.scenario,
++      prompt: 'A customer asks: “Are we training on our data?” — best answer?',
++      answer: 'No training by default; clarify retention, access controls, and what is stored.',
++      explanation: 'Be precise and calm. Avoid vague assurances; explain your data handling policy.',
++    ),
++    DrillItem(
++      id: 'd4',
++      type: DrillItemType.concept,
++      prompt: 'Why “context length” isn’t the same as “memory.”',
++      answer: 'Context is temporary input; memory is persisted, structured recall across sessions.',
++      explanation: 'Long context helps, but without persistence and retrieval it is not memory.',
++    ),
++    DrillItem(
++      id: 'd5',
++      type: DrillItemType.articulation,
++      prompt: 'Explain your AI feature to a skeptical CFO in 5 sentences.',
++      explanation: 'Write it clearly. Avoid jargon. Lead with ROI, risk controls, and costs.',
++    ),
++    DrillItem(
++      id: 'd6',
++      type: DrillItemType.review,
++      prompt: 'Define hallucination vs retrieval error.',
++      answer: 'Hallucination: fabricated content. Retrieval error: wrong/irrelevant source returned.',
++      explanation: 'Different failure modes, different fixes: prompting/evals vs indexing/retrieval tuning.',
++    ),
++  ];
++}
++
+diff --git a/apps/sivra/lib/design/sivra_colors.dart b/apps/sivra/lib/design/sivra_colors.dart
+new file mode 100644
+index 0000000..3d60fde
+--- /dev/null
++++ b/apps/sivra/lib/design/sivra_colors.dart
+@@ -0,0 +1,9 @@
++import 'package:flutter/material.dart';
++
++class SivraColors {
++  static const deepInk = Color(0xFF0F172A);
++  static const warmIvory = Color(0xFFF7F3EB);
++  static const bronze = Color(0xFFB08968);
++  static const softSage = Color(0xFFA8B5A2);
++}
++
+diff --git a/apps/sivra/lib/design/sivra_theme.dart b/apps/sivra/lib/design/sivra_theme.dart
+new file mode 100644
+index 0000000..39dc87b
+--- /dev/null
++++ b/apps/sivra/lib/design/sivra_theme.dart
+@@ -0,0 +1,59 @@
++import 'package:flutter/material.dart';
++
++import 'sivra_colors.dart';
++
++class SivraTheme {
++  static ThemeData light() {
++    final colorScheme = ColorScheme.fromSeed(
++      seedColor: SivraColors.bronze,
++      brightness: Brightness.light,
++      surface: SivraColors.warmIvory,
++      onSurface: SivraColors.deepInk,
++    );
++
++    return ThemeData(
++      useMaterial3: true,
++      colorScheme: colorScheme,
++      scaffoldBackgroundColor: SivraColors.warmIvory,
++      appBarTheme: const AppBarTheme(
++        backgroundColor: SivraColors.warmIvory,
++        foregroundColor: SivraColors.deepInk,
++        centerTitle: false,
++      ),
++      textTheme: Typography.material2021().black,
++    );
++  }
++
++  static ThemeData dark() {
++    final colorScheme = ColorScheme.fromSeed(
++      seedColor: SivraColors.bronze,
++      brightness: Brightness.dark,
++      surface: SivraColors.deepInk,
++      onSurface: SivraColors.warmIvory,
++    );
++
++    return ThemeData(
++      useMaterial3: true,
++      colorScheme: colorScheme.copyWith(
++        primary: SivraColors.bronze,
++        secondary: SivraColors.softSage,
++        surface: SivraColors.deepInk,
++        onSurface: SivraColors.warmIvory,
++      ),
++      scaffoldBackgroundColor: SivraColors.deepInk,
++      appBarTheme: const AppBarTheme(
++        backgroundColor: SivraColors.deepInk,
++        foregroundColor: SivraColors.warmIvory,
++        centerTitle: false,
++      ),
++      textTheme: Typography.material2021().white,
++      elevatedButtonTheme: ElevatedButtonThemeData(
++        style: ElevatedButton.styleFrom(
++          minimumSize: const Size.fromHeight(52),
++          shape: const StadiumBorder(),
++        ),
++      ),
++    );
++  }
++}
++
+diff --git a/apps/sivra/lib/main.dart b/apps/sivra/lib/main.dart
+index dd40707..01a3a9d 100644
+--- a/apps/sivra/lib/main.dart
++++ b/apps/sivra/lib/main.dart
+@@ -1,27 +1,12 @@
+ import 'package:flutter/material.dart';
+ import 'package:firebase_core/firebase_core.dart';
+ import 'firebase_options.dart';
++import 'sivra_app.dart';
+ 
+ Future<void> main() async {
+   WidgetsFlutterBinding.ensureInitialized();
+   await Firebase.initializeApp(
+     options: DefaultFirebaseOptions.currentPlatform,
+   );
+-  runApp(const MyApp());
++  runApp(const SivraApp());
+ }
+-
+-class MyApp extends StatelessWidget {
+-  const MyApp({super.key});
+-
+-  @override
+-  Widget build(BuildContext context) {
+-    return MaterialApp(
+-      title: 'Sivra',
+-      home: const Scaffold(
+-        body: Center(
+-          child: Text('Sivra'),
+-        ),
+-      ),
+-    );
+-  }
+-}
+diff --git a/apps/sivra/lib/models/drill_item.dart b/apps/sivra/lib/models/drill_item.dart
+new file mode 100644
+index 0000000..1a76c8e
+--- /dev/null
++++ b/apps/sivra/lib/models/drill_item.dart
+@@ -0,0 +1,45 @@
++enum DrillItemType {
++  briefing,
++  concept,
++  decision,
++  scenario,
++  articulation,
++  review,
++}
++
++class DrillItemSource {
++  final String title;
++  final String publisher;
++  final String dateLabel;
++  final String url;
++  final String? snippet;
++
++  const DrillItemSource({
++    required this.title,
++    required this.publisher,
++    required this.dateLabel,
++    required this.url,
++    this.snippet,
++  });
++}
++
++class DrillItem {
++  final String id;
++  final DrillItemType type;
++  final String prompt;
++  final String? answer;
++  final String? explanation;
++  final DrillItemSource? source;
++
++  const DrillItem({
++    required this.id,
++    required this.type,
++    required this.prompt,
++    this.answer,
++    this.explanation,
++    this.source,
++  });
++
++  bool get hasSource => source != null;
++}
++
+diff --git a/apps/sivra/lib/screens/drill_flow_screen.dart b/apps/sivra/lib/screens/drill_flow_screen.dart
+new file mode 100644
+index 0000000..ddc1cb2
+--- /dev/null
++++ b/apps/sivra/lib/screens/drill_flow_screen.dart
+@@ -0,0 +1,202 @@
++import 'package:flutter/material.dart';
++
++import '../data/mock_daily_pack.dart';
++import '../models/drill_item.dart';
++import 'source_sheet.dart';
++
++class DrillFlowScreen extends StatefulWidget {
++  const DrillFlowScreen({super.key});
++
++  @override
++  State<DrillFlowScreen> createState() => _DrillFlowScreenState();
++}
++
++class _DrillFlowScreenState extends State<DrillFlowScreen> {
++  final _items = MockDailyPack.items;
++  int _index = 0;
++  bool _revealed = false;
++  final _articulationController = TextEditingController();
++
++  @override
++  void dispose() {
++    _articulationController.dispose();
++    super.dispose();
++  }
++
++  DrillItem get _current => _items[_index];
++
++  void _next() {
++    if (_index >= _items.length - 1) {
++      Navigator.of(context).pop();
++      return;
++    }
++
++    setState(() {
++      _index += 1;
++      _revealed = false;
++      if (_current.type != DrillItemType.articulation) {
++        _articulationController.clear();
++      }
++    });
++  }
++
++  void _reveal() {
++    setState(() {
++      _revealed = true;
++    });
++  }
++
++  @override
++  Widget build(BuildContext context) {
++    final progressLabel = '${_index + 1}/${_items.length}';
++
++    return Scaffold(
++      appBar: AppBar(
++        title: const Text('Daily Pack'),
++        actions: [
++          Center(
++            child: Padding(
++              padding: const EdgeInsets.only(right: 16),
++              child: Text(
++                progressLabel,
++                style: Theme.of(context).textTheme.labelLarge,
++              ),
++            ),
++          ),
++        ],
++      ),
++      body: Padding(
++        padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
++        child: Column(
++          crossAxisAlignment: CrossAxisAlignment.start,
++          children: [
++            if (_current.hasSource)
++              Align(
++                alignment: Alignment.centerLeft,
++                child: ActionChip(
++                  label: const Text('Source'),
++                  onPressed: () {
++                    showModalBottomSheet<void>(
++                      context: context,
++                      showDragHandle: true,
++                      builder: (context) => SourceSheet(source: _current.source!),
++                    );
++                  },
++                ),
++              ),
++            const SizedBox(height: 12),
++            Text(
++              _current.prompt,
++              style: Theme.of(context).textTheme.headlineSmall,
++            ),
++            const SizedBox(height: 16),
++            Expanded(
++              child: _buildBody(context, _current),
++            ),
++            const SizedBox(height: 12),
++            _buildFooter(context, _current),
++          ],
++        ),
++      ),
++    );
++  }
++
++  Widget _buildBody(BuildContext context, DrillItem item) {
++    if (item.type == DrillItemType.articulation) {
++      return Column(
++        children: [
++          Expanded(
++            child: TextField(
++              controller: _articulationController,
++              maxLines: null,
++              expands: true,
++              textInputAction: TextInputAction.newline,
++              decoration: const InputDecoration(
++                hintText: 'Type your answer…',
++                border: OutlineInputBorder(),
++              ),
++            ),
++          ),
++          if (_revealed && (item.explanation?.isNotEmpty ?? false)) ...[
++            const SizedBox(height: 12),
++            Text(
++              item.explanation!,
++              style: Theme.of(context).textTheme.bodyMedium,
++            ),
++          ],
++        ],
++      );
++    }
++
++    if (!_revealed) {
++      return Center(
++        child: Text(
++          'Think first. Then reveal.',
++          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
++                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.72),
++              ),
++        ),
++      );
++    }
++
++    return SingleChildScrollView(
++      child: Column(
++        crossAxisAlignment: CrossAxisAlignment.start,
++        children: [
++          if (item.answer != null) ...[
++            Text(
++              'Answer',
++              style: Theme.of(context).textTheme.titleMedium,
++            ),
++            const SizedBox(height: 8),
++            Text(
++              item.answer!,
++              style: Theme.of(context).textTheme.bodyLarge,
++            ),
++          ],
++          if (item.explanation != null) ...[
++            const SizedBox(height: 16),
++            Text(
++              'Why it matters',
++              style: Theme.of(context).textTheme.titleMedium,
++            ),
++            const SizedBox(height: 8),
++            Text(
++              item.explanation!,
++              style: Theme.of(context).textTheme.bodyMedium,
++            ),
++          ],
++        ],
++      ),
++    );
++  }
++
++  Widget _buildFooter(BuildContext context, DrillItem item) {
++    final isLast = _index >= _items.length - 1;
++
++    if (item.type == DrillItemType.articulation) {
++      return Row(
++        children: [
++          Expanded(
++            child: FilledButton(
++              onPressed: _revealed ? _next : _reveal,
++              child: Text(_revealed ? (isLast ? 'Finish' : 'Next') : 'Continue'),
++            ),
++          ),
++        ],
++      );
++    }
++
++    return Row(
++      children: [
++        Expanded(
++          child: FilledButton(
++            onPressed: _revealed ? _next : _reveal,
++            child: Text(_revealed ? (isLast ? 'Finish' : 'Next') : 'Reveal'),
++          ),
++        ),
++      ],
++    );
++  }
++}
++
+diff --git a/apps/sivra/lib/screens/onboarding_screen.dart b/apps/sivra/lib/screens/onboarding_screen.dart
+new file mode 100644
+index 0000000..3c51ff1
+--- /dev/null
++++ b/apps/sivra/lib/screens/onboarding_screen.dart
+@@ -0,0 +1,116 @@
++import 'package:flutter/material.dart';
++
++import 'today_screen.dart';
++
++class OnboardingScreen extends StatefulWidget {
++  const OnboardingScreen({super.key});
++
++  @override
++  State<OnboardingScreen> createState() => _OnboardingScreenState();
++}
++
++class _OnboardingScreenState extends State<OnboardingScreen> {
++  final Set<String> _selected = {};
++
++  static const _options = <String>[
++    'Product',
++    'GTM',
++    'Hiring',
++    'Infra/Costs',
++  ];
++
++  bool get _canContinue => _selected.isNotEmpty && _selected.length <= 3;
++
++  @override
++  Widget build(BuildContext context) {
++    return Scaffold(
++      appBar: AppBar(
++        title: const Text('Sivra'),
++      ),
++      body: Padding(
++        padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
++        child: Column(
++          crossAxisAlignment: CrossAxisAlignment.start,
++          children: [
++            Text(
++              'Choose your focus',
++              style: Theme.of(context).textTheme.headlineSmall,
++            ),
++            const SizedBox(height: 8),
++            Text(
++              'Pick up to 3. This shapes your daily brief.',
++              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
++                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.72),
++                  ),
++            ),
++            const SizedBox(height: 16),
++            Expanded(
++              child: ListView.separated(
++                itemCount: _options.length,
++                separatorBuilder: (context, index) => const SizedBox(height: 8),
++                itemBuilder: (context, index) {
++                  final option = _options[index];
++                  final selected = _selected.contains(option);
++                  final disabled = !selected && _selected.length >= 3;
++
++                  return Opacity(
++                    opacity: disabled ? 0.5 : 1,
++                    child: ListTile(
++                      shape: RoundedRectangleBorder(
++                        borderRadius: BorderRadius.circular(16),
++                        side: BorderSide(
++                          color: Theme.of(context).dividerColor.withOpacity(0.35),
++                        ),
++                      ),
++                      title: Text(option),
++                      trailing: Checkbox(
++                        value: selected,
++                        onChanged: disabled
++                            ? null
++                            : (value) {
++                                setState(() {
++                                  if (value ?? false) {
++                                    _selected.add(option);
++                                  } else {
++                                    _selected.remove(option);
++                                  }
++                                });
++                              },
++                      ),
++                      onTap: disabled
++                          ? null
++                          : () {
++                              setState(() {
++                                if (selected) {
++                                  _selected.remove(option);
++                                } else {
++                                  _selected.add(option);
++                                }
++                              });
++                            },
++                    ),
++                  );
++                },
++              ),
++            ),
++            const SizedBox(height: 12),
++            SizedBox(
++              width: double.infinity,
++              child: FilledButton(
++                onPressed: _canContinue
++                    ? () {
++                        Navigator.of(context).pushReplacementNamed(
++                          TodayScreen.routeName,
++                        );
++                      }
++                    : null,
++                child: const Text('Continue'),
++              ),
++            ),
++          ],
++        ),
++      ),
++    );
++  }
++}
++
+diff --git a/apps/sivra/lib/screens/source_sheet.dart b/apps/sivra/lib/screens/source_sheet.dart
+new file mode 100644
+index 0000000..fea1a28
+--- /dev/null
++++ b/apps/sivra/lib/screens/source_sheet.dart
+@@ -0,0 +1,61 @@
++import 'package:flutter/material.dart';
++
++import '../models/drill_item.dart';
++
++class SourceSheet extends StatelessWidget {
++  final DrillItemSource source;
++
++  const SourceSheet({super.key, required this.source});
++
++  @override
++  Widget build(BuildContext context) {
++    return SafeArea(
++      top: false,
++      child: Padding(
++        padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
++        child: Column(
++          mainAxisSize: MainAxisSize.min,
++          crossAxisAlignment: CrossAxisAlignment.start,
++          children: [
++            Text(
++              'Source',
++              style: Theme.of(context).textTheme.titleLarge,
++            ),
++            const SizedBox(height: 12),
++            Text(
++              source.title,
++              style: Theme.of(context).textTheme.titleMedium,
++            ),
++            const SizedBox(height: 6),
++            Text(
++              '${source.publisher} • ${source.dateLabel}',
++              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
++                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.72),
++                  ),
++            ),
++            if (source.snippet != null) ...[
++              const SizedBox(height: 12),
++              Text(
++                source.snippet!,
++                style: Theme.of(context).textTheme.bodyMedium,
++              ),
++            ],
++            const SizedBox(height: 16),
++            Row(
++              children: [
++                Expanded(
++                  child: FilledButton(
++                    onPressed: () {
++                      Navigator.of(context).pop();
++                    },
++                    child: const Text('Done'),
++                  ),
++                ),
++              ],
++            ),
++          ],
++        ),
++      ),
++    );
++  }
++}
+diff --git a/apps/sivra/lib/screens/today_screen.dart b/apps/sivra/lib/screens/today_screen.dart
+new file mode 100644
+index 0000000..048d9bf
+--- /dev/null
++++ b/apps/sivra/lib/screens/today_screen.dart
+@@ -0,0 +1,52 @@
++import 'package:flutter/material.dart';
++
++import 'drill_flow_screen.dart';
++
++class TodayScreen extends StatelessWidget {
++  static const routeName = '/today';
++
++  const TodayScreen({super.key});
++
++  @override
++  Widget build(BuildContext context) {
++    return Scaffold(
++      appBar: AppBar(
++        title: const Text('Today'),
++      ),
++      body: Padding(
++        padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
++        child: Column(
++          crossAxisAlignment: CrossAxisAlignment.start,
++          children: [
++            Text(
++              'Today’s Brief',
++              style: Theme.of(context).textTheme.headlineMedium,
++            ),
++            const SizedBox(height: 8),
++            Text(
++              '8 minutes • 2 briefings • 6 drills',
++              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
++                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.72),
++                  ),
++            ),
++            const Spacer(),
++            SizedBox(
++              width: double.infinity,
++              child: FilledButton(
++                onPressed: () {
++                  Navigator.of(context).push(
++                    MaterialPageRoute(
++                      builder: (context) => const DrillFlowScreen(),
++                    ),
++                  );
++                },
++                child: const Text('Start'),
++              ),
++            ),
++          ],
++        ),
++      ),
++    );
++  }
++}
++
+diff --git a/apps/sivra/lib/sivra_app.dart b/apps/sivra/lib/sivra_app.dart
+new file mode 100644
+index 0000000..6928f44
+--- /dev/null
++++ b/apps/sivra/lib/sivra_app.dart
+@@ -0,0 +1,24 @@
++import 'package:flutter/material.dart';
++
++import 'design/sivra_theme.dart';
++import 'screens/onboarding_screen.dart';
++import 'screens/today_screen.dart';
++
++class SivraApp extends StatelessWidget {
++  const SivraApp({super.key});
++
++  @override
++  Widget build(BuildContext context) {
++    return MaterialApp(
++      title: 'Sivra',
++      theme: SivraTheme.light(),
++      darkTheme: SivraTheme.dark(),
++      themeMode: ThemeMode.dark,
++      home: const OnboardingScreen(),
++      routes: {
++        TodayScreen.routeName: (context) => const TodayScreen(),
++      },
++    );
++  }
++}
++
+diff --git a/apps/sivra/test/widget_test.dart b/apps/sivra/test/widget_test.dart
+index 99bf985..e54e0fa 100644
+--- a/apps/sivra/test/widget_test.dart
++++ b/apps/sivra/test/widget_test.dart
+@@ -1,30 +1,21 @@
+-// This is a basic Flutter widget test.
+-//
+-// To perform an interaction with a widget in your test, use the WidgetTester
+-// utility in the flutter_test package. For example, you can send tap and scroll
+-// gestures. You can also use WidgetTester to find child widgets in the widget
+-// tree, read text, and verify that the values of widget properties are correct.
+-
+ import 'package:flutter/material.dart';
+ import 'package:flutter_test/flutter_test.dart';
+ 
+-import 'package:sivra/main.dart';
++import 'package:sivra/design/sivra_theme.dart';
++import 'package:sivra/screens/onboarding_screen.dart';
+ 
+ void main() {
+-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
+-    // Build our app and trigger a frame.
+-    await tester.pumpWidget(const MyApp());
+-
+-    // Verify that our counter starts at 0.
+-    expect(find.text('0'), findsOneWidget);
+-    expect(find.text('1'), findsNothing);
+-
+-    // Tap the '+' icon and trigger a frame.
+-    await tester.tap(find.byIcon(Icons.add));
+-    await tester.pump();
++  testWidgets('onboarding loads', (WidgetTester tester) async {
++    await tester.pumpWidget(
++      MaterialApp(
++        theme: SivraTheme.light(),
++        darkTheme: SivraTheme.dark(),
++        themeMode: ThemeMode.dark,
++        home: const OnboardingScreen(),
++      ),
++    );
+ 
+-    // Verify that our counter has incremented.
+-    expect(find.text('0'), findsNothing);
+-    expect(find.text('1'), findsOneWidget);
++    expect(find.text('Sivra'), findsOneWidget);
++    expect(find.text('Choose your focus'), findsOneWidget);
+   });
+ }

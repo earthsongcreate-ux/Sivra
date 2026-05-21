@@ -1,0 +1,31 @@
+diff a/apps/sivra/lib/main.dart b/apps/sivra/lib/main.dart	(rejected hunks)
+@@ -1,27 +1,12 @@
+ import 'package:flutter/material.dart';
+ import 'package:firebase_core/firebase_core.dart';
+ import 'firebase_options.dart';
++import 'sivra_app.dart';
+ 
+ Future<void> main() async {
+   WidgetsFlutterBinding.ensureInitialized();
+   await Firebase.initializeApp(
+     options: DefaultFirebaseOptions.currentPlatform,
+   );
+-  runApp(const MyApp());
++  runApp(const SivraApp());
+ }
+-
+-class MyApp extends StatelessWidget {
+-  const MyApp({super.key});
+-
+-  @override
+-  Widget build(BuildContext context) {
+-    return MaterialApp(
+-      title: 'Sivra',
+-      home: const Scaffold(
+-        body: Center(
+-          child: Text('Sivra'),
+-        ),
+-      ),
+-    );
+-  }
+-}
