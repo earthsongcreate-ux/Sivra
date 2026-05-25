@@ -30,7 +30,7 @@ class SourceSheet extends StatelessWidget {
             Text(
               '${source.publisher} • ${source.dateLabel}',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.72),
+                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.72),
                   ),
             ),
             if (source.snippet != null) ...[

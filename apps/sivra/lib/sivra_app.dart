@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'design/sivra_theme.dart';
-import 'screens/onboarding_screen.dart';
+import 'screens/bootstrap_screen.dart';
 import 'screens/today_screen.dart';
 
 class SivraApp extends StatelessWidget {
@@ -14,11 +14,10 @@ class SivraApp extends StatelessWidget {
       theme: SivraTheme.light(),
       darkTheme: SivraTheme.dark(),
       themeMode: ThemeMode.dark,
-      home: const OnboardingScreen(),
+      home: const BootstrapScreen(),
       routes: {
         TodayScreen.routeName: (context) => const TodayScreen(),
       },
     );
   }
 }
-

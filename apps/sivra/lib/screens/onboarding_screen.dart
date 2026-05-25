@@ -1,9 +1,17 @@
 import 'package:flutter/material.dart';
 
+import '../services/firestore_service.dart';
 import 'today_screen.dart';
 
 class OnboardingScreen extends StatefulWidget {
-  const OnboardingScreen({super.key});
+  final String uid;
+  final VoidCallback onCompleted;
+
+  const OnboardingScreen({
+    super.key,
+    required this.uid,
+    required this.onCompleted,
+  });
 
   @override
   State<OnboardingScreen> createState() => _OnboardingScreenState();
@@ -11,22 +19,61 @@ class OnboardingScreen extends StatefulWidget {
 
 class _OnboardingScreenState extends State<OnboardingScreen> {
   final Set<String> _selected = {};
+  bool _saving = false;
 
   static const _options = <String>[
-    'Product',
-    'GTM',
-    'Hiring',
-    'Infra/Costs',
+    'Product strategy',
+    'GTM & sales',
+    'Hiring & team',
+    'Infra & costs',
   ];
 
   bool get _canContinue => _selected.isNotEmpty && _selected.length <= 3;
 
+  Future<void> _continue() async {
+    if (!_canContinue || _saving) {
+      return;
+    }
+
+    setState(() {
+      _saving = true;
+    });
+
+    try {
+      await FirestoreService.instance.upsertProfile(
+        uid: widget.uid,
+        focusAreas: _selected.toList(),
+      );
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _saving = false;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Unable to save your focus. Please try again.'),
+        ),
+      );
+      return;
+    }
+
+    if (!mounted) {
+      return;
+    }
+
+    widget.onCompleted();
+
+    Navigator.of(context).pushReplacementNamed(TodayScreen.routeName);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Sivra'),
-      ),
+      appBar: AppBar(title: const Text('Sivra')),
       body: Padding(
         padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
         child: Column(
@@ -38,10 +85,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             ),
             const SizedBox(height: 8),
             Text(
-              'Pick up to 3. This shapes your daily brief.',
+              'Pick up to 3. This shapes your daily pack.',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.72),
-                  ),
+                color: Theme.of(
+                  context,
+                ).colorScheme.onSurface.withValues(alpha: 0.72),
+              ),
             ),
             const SizedBox(height: 16),
             Expanded(
@@ -59,13 +108,15 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16),
                         side: BorderSide(
-                          color: Theme.of(context).dividerColor.withOpacity(0.35),
+                          color: Theme.of(
+                            context,
+                          ).dividerColor.withValues(alpha: 0.35),
                         ),
                       ),
                       title: Text(option),
                       trailing: Checkbox(
                         value: selected,
-                        onChanged: disabled
+                        onChanged: disabled || _saving
                             ? null
                             : (value) {
                                 setState(() {
@@ -77,7 +128,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                 });
                               },
                       ),
-                      onTap: disabled
+                      onTap: disabled || _saving
                           ? null
                           : () {
                               setState(() {
@@ -97,14 +148,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             SizedBox(
               width: double.infinity,
               child: FilledButton(
-                onPressed: _canContinue
-                    ? () {
-                        Navigator.of(context).pushReplacementNamed(
-                          TodayScreen.routeName,
-                        );
-                      }
-                    : null,
-                child: const Text('Continue'),
+                onPressed: _canContinue && !_saving ? _continue : null,
+                child: _saving ? const Text('Saving…') : const Text('Continue'),
               ),
             ),
           ],
@@ -113,4 +158,3 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     );
   }
 }
-
