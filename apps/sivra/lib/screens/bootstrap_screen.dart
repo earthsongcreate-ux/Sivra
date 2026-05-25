@@ -24,7 +24,10 @@ class _BootstrapScreenState extends State<BootstrapScreen> {
   Future<_BootstrapState> _load() async {
     final user = await AuthService.instance.ensureSignedIn();
     final profile = await FirestoreService.instance.getProfile(user.uid);
-    return _BootstrapState(uid: user.uid, hasProfile: profile != null);
+    return _BootstrapState(
+      uid: user.uid,
+      hasProfile: profile?.focusAreas.isNotEmpty ?? false,
+    );
   }
 
   @override
@@ -34,19 +37,13 @@ class _BootstrapScreenState extends State<BootstrapScreen> {
       builder: (context, snapshot) {
         if (snapshot.connectionState != ConnectionState.done) {
           return const Scaffold(
-            body: Center(
-              child: CircularProgressIndicator(),
-            ),
+            body: Center(child: CircularProgressIndicator()),
           );
         }
 
         final state = snapshot.data;
         if (state == null) {
-          return const Scaffold(
-            body: Center(
-              child: Text('Unable to start'),
-            ),
-          );
+          return const Scaffold(body: Center(child: Text('Unable to start')));
         }
 
         if (state.hasProfile) {
@@ -72,9 +69,5 @@ class _BootstrapState {
   final String uid;
   final bool hasProfile;
 
-  const _BootstrapState({
-    required this.uid,
-    required this.hasProfile,
-  });
+  const _BootstrapState({required this.uid, required this.hasProfile});
 }
-

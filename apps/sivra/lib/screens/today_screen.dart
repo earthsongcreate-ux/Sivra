@@ -26,7 +26,7 @@ class TodayScreen extends StatelessWidget {
             Text(
               '8 minutes • 2 briefings • 6 drills',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.72),
+                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.72),
                   ),
             ),
             const Spacer(),
@@ -49,4 +49,3 @@ class TodayScreen extends StatelessWidget {
     );
   }
 }
-

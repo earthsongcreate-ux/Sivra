@@ -18,6 +18,7 @@ class _DrillFlowScreenState extends State<DrillFlowScreen> {
   final _items = MockDailyPack.items;
   int _index = 0;
   bool _revealed = false;
+  bool _finishing = false;
   final _articulationController = TextEditingController();
 
   @override
@@ -44,13 +45,51 @@ class _DrillFlowScreenState extends State<DrillFlowScreen> {
   }
 
   Future<void> _finish() async {
+    if (_finishing) {
+      return;
+    }
+
+    setState(() {
+      _finishing = true;
+    });
+
     final uid = FirebaseAuth.instance.currentUser?.uid;
-    if (uid != null) {
+    if (uid == null) {
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _finishing = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Unable to save completion. Please try again.'),
+        ),
+      );
+      return;
+    }
+
+    try {
       await FirestoreService.instance.markDailyCompleted(
         uid: uid,
         dayId: dayIdFromDate(DateTime.now()),
         itemCount: _items.length,
       );
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _finishing = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Unable to save completion. Please try again.'),
+        ),
+      );
+      return;
     }
 
     if (!mounted) {
@@ -99,7 +138,8 @@ class _DrillFlowScreenState extends State<DrillFlowScreen> {
                     showModalBottomSheet<void>(
                       context: context,
                       showDragHandle: true,
-                      builder: (context) => SourceSheet(source: _current.source!),
+                      builder: (context) =>
+                          SourceSheet(source: _current.source!),
                     );
                   },
                 ),
@@ -110,9 +150,7 @@ class _DrillFlowScreenState extends State<DrillFlowScreen> {
               style: Theme.of(context).textTheme.headlineSmall,
             ),
             const SizedBox(height: 16),
-            Expanded(
-              child: _buildBody(context, _current),
-            ),
+            Expanded(child: _buildBody(context, _current)),
             const SizedBox(height: 12),
             _buildFooter(context, _current),
           ],
@@ -128,6 +166,9 @@ class _DrillFlowScreenState extends State<DrillFlowScreen> {
           Expanded(
             child: TextField(
               controller: _articulationController,
+              onChanged: (_) {
+                setState(() {});
+              },
               maxLines: null,
               expands: true,
               textInputAction: TextInputAction.newline,
@@ -137,7 +178,7 @@ class _DrillFlowScreenState extends State<DrillFlowScreen> {
               ),
             ),
           ),
-          if (_revealed && (item.explanation?.isNotEmpty ?? false)) ...[
+          if (item.explanation?.isNotEmpty ?? false) ...[
             const SizedBox(height: 12),
             Text(
               item.explanation!,
@@ -153,8 +194,10 @@ class _DrillFlowScreenState extends State<DrillFlowScreen> {
         child: Text(
           'Think first. Then reveal.',
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.72),
-              ),
+            color: Theme.of(
+              context,
+            ).colorScheme.onSurface.withValues(alpha: 0.72),
+          ),
         ),
       );
     }
@@ -164,15 +207,9 @@ class _DrillFlowScreenState extends State<DrillFlowScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (item.answer != null) ...[
-            Text(
-              'Answer',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
+            Text('Answer', style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 8),
-            Text(
-              item.answer!,
-              style: Theme.of(context).textTheme.bodyLarge,
-            ),
+            Text(item.answer!, style: Theme.of(context).textTheme.bodyLarge),
           ],
           if (item.explanation != null) ...[
             const SizedBox(height: 16),
@@ -195,12 +232,15 @@ class _DrillFlowScreenState extends State<DrillFlowScreen> {
     final isLast = _index >= _items.length - 1;
 
     if (item.type == DrillItemType.articulation) {
+      final canContinue = _articulationController.text.trim().isNotEmpty;
       return Row(
         children: [
           Expanded(
             child: FilledButton(
-              onPressed: _revealed ? _next : _reveal,
-              child: Text(_revealed ? (isLast ? 'Finish' : 'Next') : 'Continue'),
+              onPressed: _finishing || !canContinue ? null : _next,
+              child: Text(
+                isLast ? 'Finish' : 'Next',
+              ),
             ),
           ),
         ],
@@ -211,8 +251,12 @@ class _DrillFlowScreenState extends State<DrillFlowScreen> {
       children: [
         Expanded(
           child: FilledButton(
-            onPressed: _revealed ? _next : _reveal,
-            child: Text(_revealed ? (isLast ? 'Finish' : 'Next') : 'Reveal'),
+            onPressed: _finishing ? null : (_revealed ? _next : _reveal),
+            child: Text(
+              _finishing
+                  ? 'Saving...'
+                  : (_revealed ? (isLast ? 'Finish' : 'Next') : 'Reveal'),
+            ),
           ),
         ),
       ],
