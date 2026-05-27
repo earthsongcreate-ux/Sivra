@@ -55,13 +55,17 @@ Secondary: Business
 Capture iPhone portrait screenshots for:
 
 1. Onboarding focus selection.
-2. Today screen.
-3. Daily briefing prompt.
-4. Source bottom sheet.
-5. Drill answer/reveal state.
-6. Articulation drill.
+2. Onboarding plan preview.
+3. Today screen.
+4. Daily briefing prompt.
+5. Source bottom sheet.
+6. Drill answer/reveal state.
+7. Articulation drill.
+8. Learning Memory or Weekly Recap.
 
 Use real app screens, not marketing mockups, for the first TestFlight/App Store pass.
+
+See `docs/setup/app-store-assets-and-landing.md` for the full asset plan.
 
 ## Privacy Notes
 
@@ -75,8 +79,11 @@ Data stored:
 
 - Anonymous Firebase user id.
 - Selected focus areas.
+- Onboarding level, obstacle, and routine choices.
 - Daily completion timestamp.
 - Daily item count.
+- Written drill answers.
+- Subscription entitlement and product identifiers through RevenueCat.
 
 Sivra V1 does not currently collect:
 
@@ -91,7 +98,7 @@ Sivra V1 does not currently collect:
 
 Recommended App Privacy answers for V1:
 
-- Data linked to user: User ID, Product Interaction.
+- Data linked to user: User ID, Product Interaction, Purchase History.
 - Tracking: No.
 - Third-party advertising: No.
 
@@ -99,9 +106,11 @@ Confirm these answers again before submission if analytics, purchases, accounts,
 
 ## URLs Needed Before App Store Submission
 
-- Privacy Policy URL.
-- Support URL.
-- Marketing URL, optional.
+- Marketing URL: landing page root once hosted.
+- Privacy Policy URL: landing page `/privacy.html` once hosted.
+- Terms URL: landing page `/terms.html` once hosted.
+- Support URL: landing page `/support.html` once hosted.
+- FAQ URL: landing page `/faq.html` once hosted.
 
 ## Review Notes Draft
 
@@ -113,7 +122,8 @@ Sivra uses Firebase Anonymous Auth. No login credentials are required. On first 
 2. Run `flutter analyze`.
 3. Run `flutter test`.
 4. Run persistence test plan.
-5. Run `flutter build ipa --release`.
-6. Upload with Transporter or Xcode Organizer.
-7. Confirm TestFlight processing.
-8. Install from TestFlight and repeat the fresh-install and returning-user checks.
+5. Run the TestFlight QA + Store Configuration Pass.
+6. Run `flutter build ipa --release`.
+7. Upload with Transporter or Xcode Organizer.
+8. Confirm TestFlight processing.
+9. Install from TestFlight and repeat the fresh-install and returning-user checks.

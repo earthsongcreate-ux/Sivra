@@ -1,16 +1,32 @@
-# sivra
+# Sivra
 
-A new Flutter project.
+Sivra is a Flutter iOS app for daily AI fluency practice.
 
-## Getting Started
+## Local QA
 
-This project is a starting point for a Flutter application.
+```sh
+flutter analyze
+flutter test
+flutter run \
+  --dart-define=SIVRA_BUILD_CHANNEL=local \
+  --dart-define=SIVRA_DIAGNOSTICS=true
+```
 
-A few resources to get you started if this is your first Flutter project:
+## TestFlight Build Shape
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+```sh
+flutter build ipa --release \
+  --dart-define=SIVRA_BUILD_CHANNEL=testflight \
+  --dart-define=SIVRA_REVENUECAT_IOS_KEY=appl_your_public_sdk_key \
+  --dart-define=SIVRA_PRO_ENTITLEMENT=sivra_pro \
+  --dart-define=SIVRA_MONTHLY_PRODUCT_ID=sivra_monthly_1299 \
+  --dart-define=SIVRA_ANNUAL_PRODUCT_ID=sivra_annual_9999 \
+  --dart-define=SIVRA_AI_PACK_ENDPOINT=https://your-function-url \
+  --dart-define=SIVRA_DIAGNOSTICS=false
+```
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+See `docs/setup/testflight-store-configuration-pass.md` from the repo root for the full release-candidate checklist.
+
+## Landing Page
+
+The static landing page shell lives at `../../landing` from this app folder. It is intended for Cloud Pages with no build command.

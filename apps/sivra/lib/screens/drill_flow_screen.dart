@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
@@ -8,18 +10,40 @@ import '../utils/day_id.dart';
 import 'source_sheet.dart';
 
 class DrillFlowScreen extends StatefulWidget {
-  const DrillFlowScreen({super.key});
+  final List<DrillItem>? items;
+  final String? dayId;
+  final String? uid;
+  final void Function(
+    List<String> completedItemIds,
+    Map<String, String> answersByItemId,
+  )?
+  onCompleted;
+
+  const DrillFlowScreen({
+    super.key,
+    this.items,
+    this.dayId,
+    this.uid,
+    this.onCompleted,
+  });
 
   @override
   State<DrillFlowScreen> createState() => _DrillFlowScreenState();
 }
 
 class _DrillFlowScreenState extends State<DrillFlowScreen> {
-  final _items = MockDailyPack.items;
+  late final List<DrillItem> _items;
   int _index = 0;
   bool _revealed = false;
-  bool _finishing = false;
+  final Set<String> _completedItemIds = <String>{};
+  final Map<String, String> _answersByItemId = <String, String>{};
   final _articulationController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _items = widget.items ?? MockDailyPack.items;
+  }
 
   @override
   void dispose() {
@@ -29,7 +53,21 @@ class _DrillFlowScreenState extends State<DrillFlowScreen> {
 
   DrillItem get _current => _items[_index];
 
+  void _goBack() {
+    if (_index == 0) {
+      Navigator.of(context).pop();
+      return;
+    }
+
+    setState(() {
+      _index -= 1;
+      _revealed = _current.type != DrillItemType.articulation;
+    });
+  }
+
   void _next() {
+    _saveCurrentProgress();
+
     if (_index >= _items.length - 1) {
       _finish();
       return;
@@ -37,66 +75,85 @@ class _DrillFlowScreenState extends State<DrillFlowScreen> {
 
     setState(() {
       _index += 1;
-      _revealed = false;
-      if (_current.type != DrillItemType.articulation) {
-        _articulationController.clear();
-      }
+      _revealed = _current.type == DrillItemType.review;
     });
   }
 
-  Future<void> _finish() async {
-    if (_finishing) {
-      return;
-    }
-
-    setState(() {
-      _finishing = true;
-    });
-
-    final uid = FirebaseAuth.instance.currentUser?.uid;
-    if (uid == null) {
-      if (!mounted) {
-        return;
-      }
-
-      setState(() {
-        _finishing = false;
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Unable to save completion. Please try again.'),
-        ),
-      );
-      return;
-    }
-
+  void _finish() {
+    String? currentUid;
     try {
-      await FirestoreService.instance.markDailyCompleted(
-        uid: uid,
-        dayId: dayIdFromDate(DateTime.now()),
-        itemCount: _items.length,
-      );
-    } catch (error) {
-      if (!mounted) {
-        return;
-      }
+      currentUid = FirebaseAuth.instance.currentUser?.uid;
+    } catch (_) {
+      currentUid = null;
+    }
+    final uid = widget.uid ?? currentUid;
 
-      setState(() {
-        _finishing = false;
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Unable to save completion. Please try again.'),
-        ),
-      );
+    widget.onCompleted?.call(
+      _completedItemIds.toList(),
+      Map<String, String>.from(_answersByItemId),
+    );
+    if (mounted) {
+      Navigator.of(context).pop();
+    }
+
+    if (uid == null) {
       return;
     }
 
-    if (!mounted) {
+    unawaited(
+      FirestoreService.instance
+          .markDailyCompleted(
+            uid: uid,
+            dayId: widget.dayId ?? dayIdFromDate(DateTime.now()),
+            itemCount: _items.length,
+          )
+          .then(
+            (_) => FirestoreService.instance.logEvent(
+              uid: uid,
+              name: 'daily_pack_completed',
+              properties: <String, dynamic>{
+                'dayId': widget.dayId ?? dayIdFromDate(DateTime.now()),
+                'itemCount': _items.length,
+              },
+            ),
+          )
+          .catchError((_) {}),
+    );
+  }
+
+  void _saveCurrentProgress() {
+    final item = _current;
+    final answer = item.type == DrillItemType.articulation
+        ? _articulationController.text
+        : null;
+    final trimmedAnswer = answer?.trim();
+
+    _completedItemIds.add(item.id);
+    if (trimmedAnswer != null && trimmedAnswer.isNotEmpty) {
+      _answersByItemId[item.id] = trimmedAnswer;
+    }
+
+    String? currentUid;
+    try {
+      currentUid = FirebaseAuth.instance.currentUser?.uid;
+    } catch (_) {
+      currentUid = null;
+    }
+    final uid = widget.uid ?? currentUid;
+    if (uid == null) {
       return;
     }
 
-    Navigator.of(context).pop();
+    unawaited(
+      FirestoreService.instance
+          .markDailyItemCompleted(
+            uid: uid,
+            dayId: widget.dayId ?? dayIdFromDate(DateTime.now()),
+            itemId: item.id,
+            answer: answer,
+          )
+          .catchError((_) {}),
+    );
   }
 
   void _reveal() {
@@ -109,51 +166,63 @@ class _DrillFlowScreenState extends State<DrillFlowScreen> {
   Widget build(BuildContext context) {
     final progressLabel = '${_index + 1}/${_items.length}';
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Daily Pack'),
-        actions: [
-          Center(
-            child: Padding(
-              padding: const EdgeInsets.only(right: 16),
-              child: Text(
-                progressLabel,
-                style: Theme.of(context).textTheme.labelLarge,
-              ),
-            ),
+    return PopScope(
+      canPop: _index == 0,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop) {
+          _goBack();
+        }
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          leading: IconButton(
+            icon: const Icon(Icons.chevron_left),
+            onPressed: _goBack,
           ),
-        ],
-      ),
-      body: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (_current.hasSource)
-              Align(
-                alignment: Alignment.centerLeft,
-                child: ActionChip(
-                  label: const Text('Source'),
-                  onPressed: () {
-                    showModalBottomSheet<void>(
-                      context: context,
-                      showDragHandle: true,
-                      builder: (context) =>
-                          SourceSheet(source: _current.source!),
-                    );
-                  },
+          title: const Text('Daily Pack'),
+          actions: [
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.only(right: 16),
+                child: Text(
+                  progressLabel,
+                  style: Theme.of(context).textTheme.labelLarge,
                 ),
               ),
-            const SizedBox(height: 12),
-            Text(
-              _current.prompt,
-              style: Theme.of(context).textTheme.headlineSmall,
             ),
-            const SizedBox(height: 16),
-            Expanded(child: _buildBody(context, _current)),
-            const SizedBox(height: 12),
-            _buildFooter(context, _current),
           ],
+        ),
+        body: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (_current.hasSource)
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: ActionChip(
+                    label: const Text('Source'),
+                    onPressed: () {
+                      showModalBottomSheet<void>(
+                        context: context,
+                        showDragHandle: true,
+                        builder: (context) =>
+                            SourceSheet(source: _current.source!),
+                      );
+                    },
+                  ),
+                ),
+              const SizedBox(height: 12),
+              Text(
+                _current.prompt,
+                style: Theme.of(context).textTheme.headlineSmall,
+              ),
+              const SizedBox(height: 16),
+              Expanded(child: _buildBody(context, _current)),
+              const SizedBox(height: 12),
+              _buildFooter(context, _current),
+            ],
+          ),
         ),
       ),
     );
@@ -237,10 +306,8 @@ class _DrillFlowScreenState extends State<DrillFlowScreen> {
         children: [
           Expanded(
             child: FilledButton(
-              onPressed: _finishing || !canContinue ? null : _next,
-              child: Text(
-                isLast ? 'Finish' : 'Next',
-              ),
+              onPressed: canContinue ? _next : null,
+              child: Text(isLast ? 'Finish' : 'Next'),
             ),
           ),
         ],
@@ -251,12 +318,8 @@ class _DrillFlowScreenState extends State<DrillFlowScreen> {
       children: [
         Expanded(
           child: FilledButton(
-            onPressed: _finishing ? null : (_revealed ? _next : _reveal),
-            child: Text(
-              _finishing
-                  ? 'Saving...'
-                  : (_revealed ? (isLast ? 'Finish' : 'Next') : 'Reveal'),
-            ),
+            onPressed: _revealed ? _next : _reveal,
+            child: Text(_revealed ? (isLast ? 'Finish' : 'Next') : 'Reveal'),
           ),
         ),
       ],

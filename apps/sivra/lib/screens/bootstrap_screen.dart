@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../services/auth_service.dart';
+import '../services/entitlement_service.dart';
 import '../services/firestore_service.dart';
 import 'onboarding_screen.dart';
 import 'today_screen.dart';
@@ -14,6 +15,7 @@ class BootstrapScreen extends StatefulWidget {
 
 class _BootstrapScreenState extends State<BootstrapScreen> {
   late Future<_BootstrapState> _future;
+  bool _completedOnboardingThisSession = false;
 
   @override
   void initState() {
@@ -23,6 +25,11 @@ class _BootstrapScreenState extends State<BootstrapScreen> {
 
   Future<_BootstrapState> _load() async {
     final user = await AuthService.instance.ensureSignedIn();
+    try {
+      await EntitlementService.instance.configure(appUserId: user.uid);
+    } catch (_) {
+      // Purchase status should not block the core learning flow.
+    }
     final profile = await FirestoreService.instance.getProfile(user.uid);
     return _BootstrapState(
       uid: user.uid,
@@ -46,13 +53,14 @@ class _BootstrapScreenState extends State<BootstrapScreen> {
           return const Scaffold(body: Center(child: Text('Unable to start')));
         }
 
-        if (state.hasProfile) {
+        if (state.hasProfile && _completedOnboardingThisSession) {
           return const TodayScreen();
         }
 
         return OnboardingScreen(
           uid: state.uid,
           onCompleted: () {
+            _completedOnboardingThisSession = true;
             setState(() {
               _future = Future.value(
                 _BootstrapState(uid: state.uid, hasProfile: true),
