@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui';
 
 import 'package:flutter/material.dart';
 
@@ -8,11 +9,17 @@ import 'today_screen.dart';
 class OnboardingScreen extends StatefulWidget {
   final String uid;
   final VoidCallback onCompleted;
+  final bool analyticsEnabled;
+  final List<String> initialSelectedFocus;
+  final int initialStepIndex;
 
   const OnboardingScreen({
     super.key,
     required this.uid,
     required this.onCompleted,
+    this.analyticsEnabled = true,
+    this.initialSelectedFocus = const <String>[],
+    this.initialStepIndex = 0,
   });
 
   @override
@@ -20,107 +27,25 @@ class OnboardingScreen extends StatefulWidget {
 }
 
 class _OnboardingScreenState extends State<OnboardingScreen> {
-  static const _focusOptions = <String>[
-    'Product strategy',
-    'GTM & sales',
-    'Hiring & team',
-    'Infra & costs',
+  static const _roleOptions = <String>[
+    'Founder',
+    'Product / Strategy',
+    'Operator',
+    'Investor',
+    'Builder',
+    'Marketing',
+    'Other',
   ];
 
-  static const _levelOptions = <_OnboardingOption>[
-    _OnboardingOption(
-      value: 'new',
-      title: 'New to AI',
-      subtitle: 'I want plain language and useful basics.',
-    ),
-    _OnboardingOption(
-      value: 'experimenting',
-      title: 'Experimenting',
-      subtitle: 'I have tried tools, but need sharper judgment.',
-    ),
-    _OnboardingOption(
-      value: 'weekly_user',
-      title: 'Using AI weekly',
-      subtitle: 'I want better patterns and clearer decisions.',
-    ),
-    _OnboardingOption(
-      value: 'leading_adoption',
-      title: 'Leading adoption',
-      subtitle: 'I need to explain, evaluate, and guide others.',
-    ),
-    _OnboardingOption(
-      value: 'not_sure',
-      title: 'Not sure',
-      subtitle: 'Start me at a practical baseline.',
-    ),
-  ];
-
-  static const _obstacleOptions = <_OnboardingOption>[
-    _OnboardingOption(
-      value: 'too_much_noise',
-      title: 'Too much noise',
-      subtitle: 'It is hard to know what actually matters.',
-    ),
-    _OnboardingOption(
-      value: 'explaining_to_others',
-      title: 'Explaining it clearly',
-      subtitle: 'I need simple language for stakeholders.',
-    ),
-    _OnboardingOption(
-      value: 'trust_and_risk',
-      title: 'Trust and risk',
-      subtitle: 'I want to spot bad outputs before they spread.',
-    ),
-    _OnboardingOption(
-      value: 'finding_use_cases',
-      title: 'Finding useful cases',
-      subtitle: 'I need sharper ideas for my actual work.',
-    ),
-    _OnboardingOption(
-      value: 'not_sure',
-      title: 'Not sure',
-      subtitle: 'Help me find the right starting point.',
-    ),
-  ];
-
-  static const _routineOptions = <_OnboardingOption>[
-    _OnboardingOption(
-      value: '3_min_daily',
-      title: '3 min/day',
-      subtitle: 'Tiny daily reps.',
-    ),
-    _OnboardingOption(
-      value: '5_min_daily',
-      title: '5 min/day',
-      subtitle: 'The recommended pace.',
-    ),
-    _OnboardingOption(
-      value: '10_min_daily',
-      title: '10 min/day',
-      subtitle: 'Deeper practice.',
-    ),
-    _OnboardingOption(
-      value: '3x_week',
-      title: '3x/week',
-      subtitle: 'A lighter weekly rhythm.',
-    ),
-  ];
-
-  final Set<String> _selectedFocus = {};
+  final Set<String> _selectedRoles = {};
   int _stepIndex = 0;
   bool _saving = false;
-  String? _level;
-  String? _obstacle;
-  String? _routine = '5_min_daily';
 
-  static const _stepCount = 5;
+  static const _stepCount = 4;
 
   bool get _canContinue {
     return switch (_stepIndex) {
-      0 => _selectedFocus.isNotEmpty && _selectedFocus.length <= 3,
-      1 => _level != null,
-      2 => _obstacle != null,
-      3 => _routine != null,
+      2 => _selectedRoles.isNotEmpty && _selectedRoles.length <= 3,
       _ => true,
     };
   }
@@ -128,9 +53,16 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   @override
   void initState() {
     super.initState();
+    _selectedRoles.addAll(
+      widget.initialSelectedFocus.map(_roleForLegacyFocus).take(3),
+    );
+    _stepIndex = widget.initialStepIndex.clamp(0, _stepCount - 1);
+    if (!widget.analyticsEnabled) {
+      return;
+    }
     _logEventSafely(
       name: 'onboarding_started',
-      properties: const <String, dynamic>{'version': 2},
+      properties: const <String, dynamic>{'version': 3},
     );
   }
 
@@ -153,14 +85,16 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       return;
     }
 
-    _logEventSafely(
-      name: 'onboarding_step_completed',
-      properties: <String, dynamic>{
-        'version': 2,
-        'step': _stepIndex + 1,
-        'stepId': _stepId,
-      },
-    );
+    if (widget.analyticsEnabled) {
+      _logEventSafely(
+        name: 'onboarding_step_completed',
+        properties: <String, dynamic>{
+          'version': 3,
+          'step': _stepIndex + 1,
+          'stepId': _stepId,
+        },
+      );
+    }
 
     if (_stepIndex < _stepCount - 1) {
       setState(() {
@@ -177,23 +111,23 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       _saving = true;
     });
 
+    final roles = _selectedRoles.toList();
+    final focusAreas = _focusAreasForRoles(roles);
+
     try {
       await FirestoreService.instance.upsertProfile(
         uid: widget.uid,
-        focusAreas: _selectedFocus.toList(),
-        aiFluencyLevel: _level,
-        onboardingObstacle: _obstacle,
-        routineTarget: _routine,
+        focusAreas: focusAreas,
+        thinkingRoles: roles,
+        onboardingVersion: 3,
       );
       await FirestoreService.instance.logEvent(
         uid: widget.uid,
         name: 'onboarding_completed',
         properties: <String, dynamic>{
-          'version': 2,
-          'focusAreas': _selectedFocus.toList(),
-          'aiFluencyLevel': _level,
-          'obstacle': _obstacle,
-          'routineTarget': _routine,
+          'version': 3,
+          'thinkingRoles': roles,
+          'focusAreas': focusAreas,
         },
       );
     } catch (_) {
@@ -238,11 +172,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   String get _stepId {
     return switch (_stepIndex) {
-      0 => 'focus',
-      1 => 'level',
-      2 => 'obstacle',
-      3 => 'routine',
-      _ => 'plan_preview',
+      0 => 'promise',
+      1 => 'ritual',
+      2 => 'personalization',
+      _ => 'identity_shift',
     };
   }
 
@@ -250,13 +183,16 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     if (_saving) {
       return 'Saving...';
     }
-    return _stepIndex == _stepCount - 1 ? 'Start first pack' : 'Continue';
+    return switch (_stepIndex) {
+      1 => 'Build my pack',
+      3 => 'Start Day 1',
+      _ => 'Continue',
+    };
   }
 
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
-    final progress = (_stepIndex + 1) / _stepCount;
 
     return Scaffold(
       appBar: AppBar(
@@ -267,32 +203,22 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 icon: const Icon(Icons.chevron_left),
                 onPressed: _back,
               ),
-        title: const Text('Sivra'),
+        title: Image.asset(
+          'assets/brand/sivra-logo-horizontal.png',
+          height: 28,
+          fit: BoxFit.contain,
+          color: colors.onSurface,
+          colorBlendMode: BlendMode.srcIn,
+          semanticLabel: 'Sivra',
+        ),
       ),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
           child: Column(
             children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: LinearProgressIndicator(
-                      value: progress,
-                      minHeight: 6,
-                      borderRadius: BorderRadius.circular(3),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Text(
-                    '${_stepIndex + 1}/$_stepCount',
-                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                      color: colors.onSurface.withValues(alpha: 0.72),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 20),
+              _ProgressDots(index: _stepIndex, count: _stepCount),
+              const SizedBox(height: 28),
               Expanded(child: _buildStep(context)),
               const SizedBox(height: 12),
               SizedBox(
@@ -311,68 +237,172 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   Widget _buildStep(BuildContext context) {
     return switch (_stepIndex) {
-      0 => _FocusStep(
-        selected: _selectedFocus,
-        options: _focusOptions,
-        onChanged: _setFocusSelected,
+      0 => const _PromiseStep(),
+      1 => const _RitualStep(),
+      2 => _RoleStep(
+        selected: _selectedRoles,
+        options: _roleOptions,
+        onChanged: _setRoleSelected,
       ),
-      1 => _SingleChoiceStep(
-        title: 'How fluent are you with AI today?',
-        subtitle:
-            'This keeps your daily pack useful, not too basic or too advanced.',
-        options: _levelOptions,
-        value: _level,
-        onChanged: (value) => setState(() => _level = value),
-      ),
-      2 => _SingleChoiceStep(
-        title: 'What usually gets in the way?',
-        subtitle: 'Sivra will use this to shape your drills and examples.',
-        options: _obstacleOptions,
-        value: _obstacle,
-        onChanged: (value) => setState(() => _obstacle = value),
-      ),
-      3 => _SingleChoiceStep(
-        title: 'What pace feels realistic?',
-        subtitle: 'Small reps are enough. You can change this later.',
-        options: _routineOptions,
-        value: _routine,
-        onChanged: (value) => setState(() => _routine = value),
-      ),
-      _ => _PlanPreviewStep(
-        focusAreas: _selectedFocus.toList(),
-        level: _labelFor(_levelOptions, _level),
-        obstacle: _labelFor(_obstacleOptions, _obstacle),
-        routine: _labelFor(_routineOptions, _routine),
-      ),
+      _ => const _IdentityStep(),
     };
   }
 
-  void _setFocusSelected(String option, bool selected) {
+  void _setRoleSelected(String option, bool selected) {
     setState(() {
       if (selected) {
-        _selectedFocus.add(option);
+        _selectedRoles.add(option);
       } else {
-        _selectedFocus.remove(option);
+        _selectedRoles.remove(option);
       }
     });
   }
 
-  String _labelFor(List<_OnboardingOption> options, String? value) {
-    for (final option in options) {
-      if (option.value == value) {
-        return option.title;
+  String _roleForLegacyFocus(String focus) {
+    return switch (focus) {
+      'Product strategy' => 'Product / Strategy',
+      'GTM & sales' => 'Marketing',
+      'Hiring & team' => 'Founder',
+      'Infra & costs' => 'Operator',
+      _ => _roleOptions.contains(focus) ? focus : 'Founder',
+    };
+  }
+
+  List<String> _focusAreasForRoles(List<String> roles) {
+    final focusAreas = <String>[];
+
+    void add(String focus) {
+      if (!focusAreas.contains(focus)) {
+        focusAreas.add(focus);
       }
     }
-    return 'A practical baseline';
+
+    for (final role in roles) {
+      switch (role) {
+        case 'Founder':
+          add('Product strategy');
+          add('GTM & sales');
+          add('Hiring & team');
+          break;
+        case 'Product / Strategy':
+          add('Product strategy');
+          break;
+        case 'Operator':
+          add('Infra & costs');
+          add('Hiring & team');
+          break;
+        case 'Investor':
+          add('Product strategy');
+          add('GTM & sales');
+          break;
+        case 'Builder':
+          add('Product strategy');
+          add('Infra & costs');
+          break;
+        case 'Marketing':
+          add('GTM & sales');
+          break;
+        default:
+          add('Product strategy');
+      }
+    }
+
+    return focusAreas.take(3).toList();
   }
 }
 
-class _FocusStep extends StatelessWidget {
+class _ProgressDots extends StatelessWidget {
+  final int index;
+  final int count;
+
+  const _ProgressDots({required this.index, required this.count});
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: List.generate(count, (dotIndex) {
+        final active = dotIndex == index;
+
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 180),
+            curve: Curves.easeOut,
+            height: active ? 8 : 7,
+            width: active ? 8 : 7,
+            decoration: BoxDecoration(
+              color: active
+                  ? colors.primary
+                  : colors.onSurface.withValues(alpha: 0.28),
+              shape: BoxShape.circle,
+            ),
+          ),
+        );
+      }),
+    );
+  }
+}
+
+class _PromiseStep extends StatelessWidget {
+  const _PromiseStep();
+
+  @override
+  Widget build(BuildContext context) {
+    return const _CopyStep(
+      title: 'Walk into any room prepared.',
+      body:
+          'Sivra turns information into clear thinking—and helps you express it with calm, executive precision.',
+    );
+  }
+}
+
+class _RitualStep extends StatelessWidget {
+  const _RitualStep();
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+
+    return ListView(
+      children: [
+        const _StepTitle(
+          title: 'Your Daily Pack (7 min)',
+          body:
+              '2 briefings to stay current.\n\n3 thinking drills to sharpen judgment.\n\n1 articulation prompt to say it clearly.',
+        ),
+        const SizedBox(height: 28),
+        DecoratedBox(
+          decoration: BoxDecoration(
+            border: Border.all(color: colors.onSurface.withValues(alpha: 0.12)),
+            borderRadius: BorderRadius.circular(8),
+            color: colors.surface.withValues(alpha: 0.36),
+          ),
+          child: const Padding(
+            padding: EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _RitualLine(label: 'Briefings', value: '2'),
+                _RitualLine(label: 'Thinking drills', value: '3'),
+                _RitualLine(label: 'Articulation prompt', value: '1'),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _RoleStep extends StatelessWidget {
   final Set<String> selected;
   final List<String> options;
   final void Function(String option, bool selected) onChanged;
 
-  const _FocusStep({
+  const _RoleStep({
     required this.selected,
     required this.options,
     required this.onChanged,
@@ -380,22 +410,16 @@ class _FocusStep extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+
     return ListView(
       children: [
-        Text(
-          'Choose your focus',
-          style: Theme.of(context).textTheme.headlineSmall,
+        const _StepTitle(
+          title: 'What do you think for a living?',
+          body:
+              'Choose what matters most. Sivra shapes your Daily Pack around how you think.',
         ),
-        const SizedBox(height: 8),
-        Text(
-          'Pick up to 3. This shapes your daily pack.',
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            color: Theme.of(
-              context,
-            ).colorScheme.onSurface.withValues(alpha: 0.72),
-          ),
-        ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 18),
         ...options.map((option) {
           final isSelected = selected.contains(option);
           final disabled = !isSelected && selected.length >= 3;
@@ -412,173 +436,175 @@ class _FocusStep extends StatelessWidget {
                   onChanged: disabled
                       ? null
                       : (value) => onChanged(option, value ?? false),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(4),
+                  ),
                 ),
                 onTap: disabled ? null : () => onChanged(option, !isSelected),
               ),
             ),
           );
         }),
+        const SizedBox(height: 6),
+        Text(
+          'Choose up to 3.',
+          style: Theme.of(context).textTheme.labelLarge?.copyWith(
+            color: colors.onSurface.withValues(alpha: 0.58),
+          ),
+        ),
       ],
     );
   }
 }
 
-class _SingleChoiceStep extends StatelessWidget {
-  final String title;
-  final String subtitle;
-  final List<_OnboardingOption> options;
-  final String? value;
-  final ValueChanged<String> onChanged;
-
-  const _SingleChoiceStep({
-    required this.title,
-    required this.subtitle,
-    required this.options,
-    required this.value,
-    required this.onChanged,
-  });
+class _IdentityStep extends StatelessWidget {
+  const _IdentityStep();
 
   @override
   Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
-
-    return ListView(
+    return const Stack(
       children: [
-        Text(title, style: Theme.of(context).textTheme.headlineSmall),
-        const SizedBox(height: 8),
-        Text(
-          subtitle,
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            color: colors.onSurface.withValues(alpha: 0.72),
-          ),
+        Positioned.fill(child: _DailyPackAtmosphere()),
+        _CopyStep(
+          title: 'From informed → sharp.',
+          body:
+              'Six months from now, you won’t just know more.\n\nYou’ll walk into meetings with a point of view, explain complexity simply, and think with greater precision under pressure.',
         ),
-        const SizedBox(height: 16),
-        ...options.map((option) {
-          final selected = option.value == value;
-
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 8),
-            child: _ChoiceTile(
-              title: option.title,
-              subtitle: option.subtitle,
-              selected: selected,
-              trailing: Icon(
-                selected
-                    ? Icons.radio_button_checked
-                    : Icons.radio_button_unchecked,
-                color: selected ? colors.primary : null,
-              ),
-              onTap: () => onChanged(option.value),
-            ),
-          );
-        }),
       ],
     );
   }
 }
 
-class _PlanPreviewStep extends StatelessWidget {
-  final List<String> focusAreas;
-  final String level;
-  final String obstacle;
-  final String routine;
+class _CopyStep extends StatelessWidget {
+  final String title;
+  final String body;
 
-  const _PlanPreviewStep({
-    required this.focusAreas,
-    required this.level,
-    required this.obstacle,
-    required this.routine,
-  });
+  const _CopyStep({required this.title, required this.body});
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      children: [
+        SizedBox(height: MediaQuery.sizeOf(context).height * 0.08),
+        _StepTitle(title: title, body: body),
+      ],
+    );
+  }
+}
+
+class _StepTitle extends StatelessWidget {
+  final String title;
+  final String body;
+
+  const _StepTitle({required this.title, required this.body});
 
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
-    final focusLabel = focusAreas.isEmpty
-        ? 'general AI fluency'
-        : focusAreas.join(', ');
 
-    return ListView(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Your first pack is ready', style: textTheme.headlineSmall),
-        const SizedBox(height: 8),
+        Text(title, style: textTheme.headlineMedium),
+        const SizedBox(height: 14),
         Text(
-          'Based on your answers, Sivra will start with practical reps you can finish today.',
-          style: textTheme.bodyMedium?.copyWith(
-            color: colors.onSurface.withValues(alpha: 0.72),
+          body,
+          style: textTheme.bodyLarge?.copyWith(
+            color: colors.onSurface.withValues(alpha: 0.76),
+            height: 1.42,
           ),
-        ),
-        const SizedBox(height: 20),
-        _PlanBullet(
-          icon: Icons.track_changes_outlined,
-          title: 'Focus',
-          body: 'Start with $focusLabel.',
-        ),
-        _PlanBullet(
-          icon: Icons.tune_outlined,
-          title: 'Level',
-          body: 'Calibrate examples for $level.',
-        ),
-        _PlanBullet(
-          icon: Icons.psychology_alt_outlined,
-          title: 'Practice',
-          body: 'Include drills that help with $obstacle.',
-        ),
-        _PlanBullet(
-          icon: Icons.schedule_outlined,
-          title: 'Routine',
-          body: 'Keep the habit realistic: $routine.',
         ),
       ],
     );
   }
 }
 
-class _PlanBullet extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final String body;
+class _RitualLine extends StatelessWidget {
+  final String label;
+  final String value;
 
-  const _PlanBullet({
-    required this.icon,
-    required this.title,
-    required this.body,
-  });
+  const _RitualLine({required this.label, required this.value});
 
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          border: Border.all(color: colors.onSurface.withValues(alpha: 0.14)),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(14),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Icon(icon, color: colors.primary),
-              const SizedBox(width: 12),
-              Expanded(
+      padding: const EdgeInsets.symmetric(vertical: 7),
+      child: Row(
+        children: [
+          Text(
+            value,
+            style: Theme.of(
+              context,
+            ).textTheme.headlineSmall?.copyWith(color: colors.primary),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Text(label, style: Theme.of(context).textTheme.titleMedium),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DailyPackAtmosphere extends StatelessWidget {
+  const _DailyPackAtmosphere();
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+
+    return IgnorePointer(
+      child: Opacity(
+        opacity: 0.16,
+        child: ImageFiltered(
+          imageFilter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: Transform.translate(
+            offset: const Offset(22, 80),
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                border: Border.all(
+                  color: colors.primary.withValues(alpha: 0.28),
+                ),
+                borderRadius: BorderRadius.circular(8),
+                color: colors.surface.withValues(alpha: 0.44),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(18),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(title, style: Theme.of(context).textTheme.titleSmall),
-                    const SizedBox(height: 4),
-                    Text(
-                      body,
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: colors.onSurface.withValues(alpha: 0.72),
+                    Container(
+                      height: 18,
+                      width: 160,
+                      decoration: BoxDecoration(
+                        color: colors.onSurface,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                    ),
+                    const SizedBox(height: 18),
+                    Container(
+                      height: 86,
+                      decoration: BoxDecoration(
+                        border: Border.all(color: colors.primary),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Container(
+                      height: 86,
+                      decoration: BoxDecoration(
+                        border: Border.all(color: colors.onSurface),
+                        borderRadius: BorderRadius.circular(8),
                       ),
                     ),
                   ],
                 ),
               ),
-            ],
+            ),
           ),
         ),
       ),
@@ -588,14 +614,12 @@ class _PlanBullet extends StatelessWidget {
 
 class _ChoiceTile extends StatelessWidget {
   final String title;
-  final String? subtitle;
   final bool selected;
   final Widget trailing;
   final VoidCallback? onTap;
 
   const _ChoiceTile({
     required this.title,
-    this.subtitle,
     required this.selected,
     required this.trailing,
     required this.onTap,
@@ -615,21 +639,8 @@ class _ChoiceTile extends StatelessWidget {
         ),
       ),
       title: Text(title),
-      subtitle: subtitle == null ? null : Text(subtitle!),
       trailing: trailing,
       onTap: onTap,
     );
   }
-}
-
-class _OnboardingOption {
-  final String value;
-  final String title;
-  final String subtitle;
-
-  const _OnboardingOption({
-    required this.value,
-    required this.title,
-    required this.subtitle,
-  });
 }

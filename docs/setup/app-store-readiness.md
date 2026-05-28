@@ -28,6 +28,8 @@ Before the next IPA attempt:
 
 ## App Store Metadata Draft
 
+See `docs/setup/app-store-metadata-final.md` for the final App Store Connect copy block.
+
 ### Subtitle
 
 Daily AI fluency for founders.
@@ -66,6 +68,8 @@ Capture iPhone portrait screenshots for:
 Use real app screens, not marketing mockups, for the first TestFlight/App Store pass.
 
 See `docs/setup/app-store-assets-and-landing.md` for the full asset plan.
+
+Use `docs/setup/app-store-screenshot-capture-plan.md` for the Milestone 15 raw capture checklist and ASO benefit headline mapping.
 
 ## Privacy Notes
 

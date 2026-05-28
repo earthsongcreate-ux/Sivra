@@ -13,6 +13,8 @@ class DrillFlowScreen extends StatefulWidget {
   final List<DrillItem>? items;
   final String? dayId;
   final String? uid;
+  final int initialIndex;
+  final String initialArticulationAnswer;
   final void Function(
     List<String> completedItemIds,
     Map<String, String> answersByItemId,
@@ -24,6 +26,8 @@ class DrillFlowScreen extends StatefulWidget {
     this.items,
     this.dayId,
     this.uid,
+    this.initialIndex = 0,
+    this.initialArticulationAnswer = '',
     this.onCompleted,
   });
 
@@ -43,6 +47,8 @@ class _DrillFlowScreenState extends State<DrillFlowScreen> {
   void initState() {
     super.initState();
     _items = widget.items ?? MockDailyPack.items;
+    _index = widget.initialIndex.clamp(0, _items.length - 1);
+    _articulationController.text = widget.initialArticulationAnswer;
   }
 
   @override

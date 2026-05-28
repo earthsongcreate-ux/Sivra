@@ -25,19 +25,18 @@ void main() {
       ),
     );
 
-    expect(find.text('Sivra'), findsOneWidget);
-    expect(find.text('Choose your focus'), findsOneWidget);
+    expect(find.bySemanticsLabel('Sivra'), findsOneWidget);
+    expect(find.text('Walk into any room prepared.'), findsOneWidget);
     expect(
-      find.text('Pick up to 3. This shapes your daily pack.'),
+      find.text(
+        'Sivra turns information into clear thinking—and helps you express it with calm, executive precision.',
+      ),
       findsOneWidget,
     );
-    expect(find.text('Product strategy'), findsOneWidget);
-    expect(find.text('GTM & sales'), findsOneWidget);
-    expect(find.text('Hiring & team'), findsOneWidget);
-    expect(find.text('Infra & costs'), findsOneWidget);
+    expect(find.text('Continue'), findsOneWidget);
   });
 
-  testWidgets('onboarding advances through personalization questions', (
+  testWidgets('onboarding advances through four-screen ritual flow', (
     WidgetTester tester,
   ) async {
     await tester.pumpWidget(
@@ -49,21 +48,24 @@ void main() {
       ),
     );
 
-    expect(find.text('1/5'), findsOneWidget);
-    await tester.tap(find.text('Product strategy'));
+    await tester.tap(find.text('Continue'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Your Daily Pack (7 min)'), findsOneWidget);
+    expect(find.text('Build my pack'), findsOneWidget);
+    await tester.tap(find.text('Build my pack'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('What do you think for a living?'), findsOneWidget);
+    expect(find.text('Founder'), findsOneWidget);
+    expect(find.text('Product / Strategy'), findsOneWidget);
+    await tester.tap(find.text('Founder'));
     await tester.pump();
     await tester.tap(find.text('Continue'));
     await tester.pumpAndSettle();
 
-    expect(find.text('How fluent are you with AI today?'), findsOneWidget);
-    expect(find.text('2/5'), findsOneWidget);
-    await tester.tap(find.text('Experimenting'));
-    await tester.pump();
-    await tester.tap(find.text('Continue'));
-    await tester.pumpAndSettle();
-
-    expect(find.text('What usually gets in the way?'), findsOneWidget);
-    expect(find.text('3/5'), findsOneWidget);
+    expect(find.text('From informed → sharp.'), findsOneWidget);
+    expect(find.text('Start Day 1'), findsOneWidget);
   });
 
   testWidgets('daily pack advances, goes back by item, and finishes', (

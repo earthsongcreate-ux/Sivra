@@ -1,6 +1,7 @@
 class UserProfile {
   final String uid;
   final List<String> focusAreas;
+  final List<String> thinkingRoles;
   final String? aiFluencyLevel;
   final String? onboardingObstacle;
   final String? routineTarget;
@@ -9,6 +10,7 @@ class UserProfile {
   const UserProfile({
     required this.uid,
     required this.focusAreas,
+    this.thinkingRoles = const <String>[],
     this.aiFluencyLevel,
     this.onboardingObstacle,
     this.routineTarget,
@@ -31,6 +33,11 @@ class UserProfile {
     return UserProfile(
       uid: uid,
       focusAreas: focusAreas,
+      thinkingRoles: onboardingMap['thinkingRoles'] is List
+          ? (onboardingMap['thinkingRoles'] as List)
+                .whereType<String>()
+                .toList()
+          : const <String>[],
       aiFluencyLevel: onboardingMap['aiFluencyLevel'] is String
           ? onboardingMap['aiFluencyLevel'] as String
           : null,

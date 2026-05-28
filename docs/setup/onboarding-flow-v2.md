@@ -1,46 +1,43 @@
-# Sivra Onboarding Flow 2.0
+# Sivra Onboarding Flow 3.0
 
-Milestone 8 turns onboarding into a short questionnaire that creates a useful first daily pack without adding signup, permissions, or paywall friction.
+Milestone 8 originally introduced personalization. The current V3 refinement tightens onboarding to Sivra’s standard: calm authority, executive clarity, and identity-led language.
 
 ## Product Choice
 
-The attached onboarding questionnaire recommends a broad pattern used by subscription apps. Sivra uses the parts that fit the current build:
+Sivra now uses a four-screen onboarding flow designed to complete in about 30-40 seconds:
 
-- Start with the core personalization input: focus areas.
-- Ask only questions that change the learning experience.
+- Lead with the promise, not a settings form.
+- Explain the daily ritual.
+- Ask one personalization question.
+- End with the identity shift.
 - Keep Back available.
-- Show progress.
+- Show subtle dot progress.
 - Defer permissions.
 - Defer paywall until the user has context for the value.
 
 ## Flow
 
-1. `focus`
-   - Title: `Choose your focus`
-   - Copy: `Pick up to 3. This shapes your daily pack.`
-   - Options: Product strategy, GTM & sales, Hiring & team, Infra & costs.
+1. `promise`
+   - Title: `Walk into any room prepared.`
+   - Copy: `Sivra turns information into clear thinking—and helps you express it with calm, executive precision.`
    - CTA: `Continue`
 
-2. `level`
-   - Title: `How fluent are you with AI today?`
-   - Options: New to AI, Experimenting, Using AI weekly, Leading adoption, Not sure.
+2. `ritual`
+   - Title: `Your Daily Pack (7 min)`
+   - Copy: `2 briefings to stay current. 3 thinking drills to sharpen judgment. 1 articulation prompt to say it clearly.`
+   - CTA: `Build my pack`
+
+3. `personalization`
+   - Title: `What do you think for a living?`
+   - Copy: `Choose what matters most. Sivra shapes your Daily Pack around how you think.`
+   - Options: Founder, Product / Strategy, Operator, Investor, Builder, Marketing, Other.
+   - Max selections: 3.
    - CTA: `Continue`
 
-3. `obstacle`
-   - Title: `What usually gets in the way?`
-   - Options: Too much noise, Explaining it clearly, Trust and risk, Finding useful cases, Not sure.
-   - CTA: `Continue`
-
-4. `routine`
-   - Title: `What pace feels realistic?`
-   - Options: 3 min/day, 5 min/day, 10 min/day, 3x/week.
-   - Default: 5 min/day.
-   - CTA: `Continue`
-
-5. `plan_preview`
-   - Title: `Your first pack is ready`
-   - Shows the user’s focus, level, obstacle, and routine.
-   - CTA: `Start first pack`
+4. `identity_shift`
+   - Title: `From informed → sharp.`
+   - Copy: `Six months from now, you won’t just know more. You’ll walk into meetings with a point of view, explain complexity simply, and think with greater precision under pressure.`
+   - CTA: `Start Day 1`
 
 ## Saved Profile Fields
 
@@ -48,10 +45,10 @@ Profile data is saved under the user document:
 
 - `focusAreas`
 - `onboarding.version`
-- `onboarding.aiFluencyLevel`
-- `onboarding.obstacle`
-- `onboarding.routineTarget`
+- `onboarding.thinkingRoles`
 - `onboarding.completedAt`
+
+Selected thinking roles are mapped to first-pack focus areas so the existing Daily Pack pipeline can start immediately.
 
 ## Analytics Events
 
@@ -59,7 +56,7 @@ Profile data is saved under the user document:
 - `onboarding_step_completed`
 - `onboarding_completed`
 
-Each event includes `version: 2`; step completion includes `step` and `stepId`.
+Each event includes `version: 3`; step completion includes `step` and `stepId`.
 
 ## Deferred
 

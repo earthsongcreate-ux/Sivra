@@ -5,12 +5,14 @@ Use this script for each TestFlight candidate build.
 ## Install And First Run
 
 1. Install the app fresh.
-2. Confirm the first screen is `Choose your focus`.
-3. Select one to three focus areas.
-4. Tap Continue.
-5. Continue through AI level, obstacle, routine, and plan preview.
-6. Tap `Start first pack`.
-7. Confirm Today loads a pack.
+2. Confirm the first screen is `Walk into any room prepared.`
+3. Tap Continue.
+4. Confirm `Your Daily Pack (7 min)`.
+5. Tap `Build my pack`.
+6. Select one to three thinking roles.
+7. Continue to `From informed → sharp.`
+8. Tap `Start Day 1`.
+9. Confirm Today loads a pack.
 
 ## Paywall And Entitlements
 

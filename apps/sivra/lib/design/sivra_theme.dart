@@ -47,6 +47,10 @@ class SivraTheme {
         centerTitle: false,
       ),
       textTheme: Typography.material2021().white,
+      cardTheme: const CardThemeData(
+        color: SivraColors.surface,
+        surfaceTintColor: Colors.transparent,
+      ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           minimumSize: const Size.fromHeight(52),
@@ -56,4 +60,3 @@ class SivraTheme {
     );
   }
 }
-

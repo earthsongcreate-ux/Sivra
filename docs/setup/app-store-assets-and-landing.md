@@ -64,6 +64,8 @@ Categories:
 - Primary: Education
 - Secondary: Business
 
+See `docs/setup/app-store-metadata-final.md` for the final App Store Connect copy block.
+
 ## Screenshot Storyboard
 
 Capture real app screens first. Use marketing frames later only if the raw screenshots feel too plain.
@@ -84,6 +86,8 @@ Recommended first set:
    - Caption idea: `Track your answers and build durable fluency.`
 7. Sivra Pro paywall
    - Caption idea: `Try AI-generated daily packs with a 7-day trial.`
+
+See `docs/setup/app-store-screenshot-capture-plan.md` for benefit headlines, raw capture names, and screenshot QA rules.
 
 ## Capture Checklist
 

@@ -140,11 +140,12 @@ For each build, record:
 1. Delete the app.
 2. Install the TestFlight build.
 3. Launch app.
-4. Confirm first screen is `Choose your focus`.
-5. Select one to three focus areas.
-6. Continue through level, obstacle, routine, and plan preview.
-7. Tap `Start first pack`.
-8. Confirm Today loads.
+4. Confirm first screen is `Walk into any room prepared.`
+5. Continue to `Your Daily Pack (7 min)`.
+6. Select one to three thinking roles.
+7. Continue to `From informed → sharp.`
+8. Tap `Start Day 1`.
+9. Confirm Today loads.
 
 ### Today + Paywall
 
@@ -250,6 +251,8 @@ Before public App Store submission:
 - Support page uses `support@veloranlabs.com` and does not include a form.
 - Privacy, Terms, FAQ, and Support URLs are entered in App Store Connect where required.
 - App Store screenshots follow `docs/setup/app-store-assets-and-landing.md`.
+- App Store metadata follows `docs/setup/app-store-metadata-final.md`.
+- Raw screenshot capture follows `docs/setup/app-store-screenshot-capture-plan.md`.
 
 ## References
 

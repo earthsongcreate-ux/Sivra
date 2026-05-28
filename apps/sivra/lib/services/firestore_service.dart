@@ -97,10 +97,11 @@ class FirestoreService {
   Future<void> upsertProfile({
     required String uid,
     required List<String> focusAreas,
+    List<String> thinkingRoles = const <String>[],
     String? aiFluencyLevel,
     String? onboardingObstacle,
     String? routineTarget,
-    int onboardingVersion = 2,
+    int onboardingVersion = 3,
   }) async {
     final ref = _userDoc(uid);
 
@@ -112,6 +113,7 @@ class FirestoreService {
         'focusAreas': focusAreas,
         'onboarding': <String, dynamic>{
           'version': onboardingVersion,
+          if (thinkingRoles.isNotEmpty) 'thinkingRoles': thinkingRoles,
           if (aiFluencyLevel != null) 'aiFluencyLevel': aiFluencyLevel,
           if (onboardingObstacle != null) 'obstacle': onboardingObstacle,
           if (routineTarget != null) 'routineTarget': routineTarget,
