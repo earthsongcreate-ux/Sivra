@@ -68,6 +68,32 @@ void main() {
     expect(find.text('Start Day 1'), findsOneWidget);
   });
 
+  testWidgets('onboarding limits personalization to three roles', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: SivraTheme.light(),
+        darkTheme: SivraTheme.dark(),
+        themeMode: ThemeMode.dark,
+        home: const OnboardingScreen(
+          uid: 'test',
+          initialStepIndex: 2,
+          onCompleted: _noop,
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('Founder'));
+    await tester.tap(find.text('Product / Strategy'));
+    await tester.tap(find.text('Operator'));
+    await tester.tap(find.text('Investor'));
+    await tester.pump();
+
+    final selectedBoxes = tester.widgetList<Checkbox>(find.byType(Checkbox));
+    expect(selectedBoxes.where((box) => box.value == true), hasLength(3));
+  });
+
   testWidgets('daily pack advances, goes back by item, and finishes', (
     WidgetTester tester,
   ) async {
@@ -143,6 +169,14 @@ void main() {
       find.text(
         'RevenueCat offerings are not available in this build. Free curated packs remain available.',
       ),
+      findsOneWidget,
+    );
+    expect(find.text('Restore purchases'), findsOneWidget);
+    await tester.tap(find.text('Restore purchases'));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text('No active Sivra Pro purchase was found.'),
       findsOneWidget,
     );
     expect(find.text('Continue free'), findsOneWidget);
@@ -262,3 +296,5 @@ void main() {
     expect(audit.hostCounts.keys, contains('openai.com'));
   });
 }
+
+void _noop() {}

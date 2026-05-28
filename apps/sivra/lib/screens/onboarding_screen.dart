@@ -251,6 +251,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   void _setRoleSelected(String option, bool selected) {
     setState(() {
       if (selected) {
+        if (_selectedRoles.length >= 3) {
+          return;
+        }
         _selectedRoles.add(option);
       } else {
         _selectedRoles.remove(option);

