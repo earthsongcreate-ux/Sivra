@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 import '../services/auth_service.dart';
 import '../services/entitlement_service.dart';
@@ -24,17 +25,40 @@ class _BootstrapScreenState extends State<BootstrapScreen> {
   }
 
   Future<_BootstrapState> _load() async {
-    final user = await AuthService.instance.ensureSignedIn();
+    final user = await _trySignIn();
+
+    if (user == null) {
+      return const _BootstrapState.localOnly();
+    }
+
     try {
       await EntitlementService.instance.configure(appUserId: user.uid);
     } catch (_) {
       // Purchase status should not block the core learning flow.
     }
-    final profile = await FirestoreService.instance.getProfile(user.uid);
+
+    var profileUnavailable = false;
+    final profile = await FirestoreService.instance.getProfile(user.uid)
+        .catchError((Object error) {
+          profileUnavailable = true;
+          debugPrint('Sivra startup profile unavailable: $error');
+          return null;
+        });
+
     return _BootstrapState(
       uid: user.uid,
       hasProfile: profile?.focusAreas.isNotEmpty ?? false,
+      localOnly: profileUnavailable,
     );
+  }
+
+  Future<User?> _trySignIn() async {
+    try {
+      return await AuthService.instance.ensureSignedIn();
+    } catch (error) {
+      debugPrint('Sivra startup auth unavailable: $error');
+      return null;
+    }
   }
 
   @override
@@ -59,6 +83,8 @@ class _BootstrapScreenState extends State<BootstrapScreen> {
 
         return OnboardingScreen(
           uid: state.uid,
+          allowLocalCompletion: state.localOnly,
+          analyticsEnabled: !state.localOnly,
           onCompleted: () {
             _completedOnboardingThisSession = true;
             setState(() {
@@ -67,6 +93,18 @@ class _BootstrapScreenState extends State<BootstrapScreen> {
               );
             });
           },
+          onCompletedWithFocus: state.localOnly
+              ? (focusAreas) {
+                  Navigator.of(context).pushReplacement(
+                    MaterialPageRoute(
+                      builder: (context) => TodayScreen(
+                        initialFocusAreas: focusAreas,
+                        loadRemote: false,
+                      ),
+                    ),
+                  );
+                }
+              : null,
         );
       },
     );
@@ -76,6 +114,16 @@ class _BootstrapScreenState extends State<BootstrapScreen> {
 class _BootstrapState {
   final String uid;
   final bool hasProfile;
+  final bool localOnly;
 
-  const _BootstrapState({required this.uid, required this.hasProfile});
+  const _BootstrapState({
+    required this.uid,
+    required this.hasProfile,
+    this.localOnly = false,
+  });
+
+  const _BootstrapState.localOnly()
+    : uid = 'local-startup',
+      hasProfile = false,
+      localOnly = true;
 }

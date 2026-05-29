@@ -9,17 +9,21 @@ import 'today_screen.dart';
 class OnboardingScreen extends StatefulWidget {
   final String uid;
   final VoidCallback onCompleted;
+  final ValueChanged<List<String>>? onCompletedWithFocus;
   final bool analyticsEnabled;
   final List<String> initialSelectedFocus;
   final int initialStepIndex;
+  final bool allowLocalCompletion;
 
   const OnboardingScreen({
     super.key,
     required this.uid,
     required this.onCompleted,
+    this.onCompletedWithFocus,
     this.analyticsEnabled = true,
     this.initialSelectedFocus = const <String>[],
     this.initialStepIndex = 0,
+    this.allowLocalCompletion = false,
   });
 
   @override
@@ -131,6 +135,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         },
       );
     } catch (_) {
+      if (widget.allowLocalCompletion) {
+        _finish(focusAreas);
+        return;
+      }
+
       if (!mounted) {
         return;
       }
@@ -147,11 +156,21 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       return;
     }
 
+    _finish(focusAreas);
+  }
+
+  void _finish(List<String> focusAreas) {
     if (!mounted) {
       return;
     }
 
     widget.onCompleted();
+    final completionWithFocus = widget.onCompletedWithFocus;
+    if (completionWithFocus != null) {
+      completionWithFocus(focusAreas);
+      return;
+    }
+
     Navigator.of(context).pushReplacementNamed(TodayScreen.routeName);
   }
 

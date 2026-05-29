@@ -94,6 +94,42 @@ void main() {
     expect(selectedBoxes.where((box) => box.value == true), hasLength(3));
   });
 
+  testWidgets('onboarding can complete locally when startup sync is unavailable', (
+    WidgetTester tester,
+  ) async {
+    var completed = false;
+    var completedFocus = <String>[];
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: SivraTheme.light(),
+        darkTheme: SivraTheme.dark(),
+        themeMode: ThemeMode.dark,
+        home: OnboardingScreen(
+          uid: 'local-startup',
+          initialStepIndex: 2,
+          allowLocalCompletion: true,
+          onCompleted: () {
+            completed = true;
+          },
+          onCompletedWithFocus: (focusAreas) {
+            completedFocus = focusAreas;
+          },
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('Founder'));
+    await tester.pump();
+    await tester.tap(find.text('Continue'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Start Day 1'));
+    await tester.pumpAndSettle();
+
+    expect(completed, isTrue);
+    expect(completedFocus, contains('Product strategy'));
+  });
+
   testWidgets('daily pack advances, goes back by item, and finishes', (
     WidgetTester tester,
   ) async {
