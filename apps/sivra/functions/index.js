@@ -1,9 +1,11 @@
 import OpenAI from "openai";
+import { getApps, initializeApp } from "firebase-admin/app";
+import { getAuth } from "firebase-admin/auth";
 import { onRequest } from "firebase-functions/v2/https";
 
-const client = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+if (getApps().length === 0) {
+  initializeApp();
+}
 
 const packSchema = {
   type: "object",
@@ -75,9 +77,16 @@ export const generateDailyPack = onRequest(
       return;
     }
 
-    const configuredToken = process.env.SIVRA_AI_PACK_TOKEN || "";
     const authHeader = request.get("authorization") || "";
-    if (configuredToken && authHeader !== `Bearer ${configuredToken}`) {
+    if (!authHeader.startsWith("Bearer ")) {
+      response.status(401).json({ error: "Unauthorized" });
+      return;
+    }
+
+    let decodedToken;
+    try {
+      decodedToken = await getAuth().verifyIdToken(authHeader.slice(7));
+    } catch {
       response.status(401).json({ error: "Unauthorized" });
       return;
     }
@@ -88,7 +97,16 @@ export const generateDailyPack = onRequest(
       return;
     }
 
+    const apiKey = process.env.OPENAI_API_KEY;
+    if (!apiKey) {
+      response.status(500).json({ error: "OPENAI_API_KEY is not configured" });
+      return;
+    }
+
+    const client = new OpenAI({ apiKey });
+
     const body = request.body || {};
+    const uid = typeof body.uid === "string" ? body.uid : "";
     const dayId = typeof body.dayId === "string" ? body.dayId : "";
     const focusAreas = Array.isArray(body.focusAreas)
       ? body.focusAreas.filter((item) => typeof item === "string")
@@ -96,6 +114,11 @@ export const generateDailyPack = onRequest(
     const learningProfile = body.learningProfile && typeof body.learningProfile === "object"
       ? body.learningProfile
       : null;
+
+    if (!uid || uid !== decodedToken.uid) {
+      response.status(403).json({ error: "Authenticated user does not match uid" });
+      return;
+    }
 
     if (!dayId || focusAreas.length === 0) {
       response.status(400).json({ error: "dayId and focusAreas are required" });

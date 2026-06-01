@@ -18,8 +18,13 @@ service cloud.firestore {
       match /daily/{dayId} {
         allow read, write: if request.auth != null && request.auth.uid == uid;
       }
+
+      match /events/{eventId} {
+        allow create: if request.auth != null && request.auth.uid == uid;
+      }
     }
   }
 }
 ```
 
+The tracked deployable rules live at `apps/sivra/firestore.rules`.

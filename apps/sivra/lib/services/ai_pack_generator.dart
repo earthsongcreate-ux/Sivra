@@ -1,28 +1,28 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:firebase_auth/firebase_auth.dart';
+
 import '../models/daily_pack.dart';
 import '../models/drill_item.dart';
 import '../models/learning_profile.dart';
 
 class AiPackGenerator {
   final Uri? endpoint;
-  final String authToken;
   final HttpClient Function() httpClientFactory;
+  final Future<String?> Function() idTokenProvider;
 
   const AiPackGenerator({
     required this.endpoint,
-    this.authToken = '',
     this.httpClientFactory = _defaultHttpClient,
+    this.idTokenProvider = _defaultIdTokenProvider,
   });
 
   factory AiPackGenerator.fromEnvironment() {
     const endpointValue = String.fromEnvironment('SIVRA_AI_PACK_ENDPOINT');
-    const authToken = String.fromEnvironment('SIVRA_AI_PACK_TOKEN');
 
     return AiPackGenerator(
       endpoint: endpointValue.isEmpty ? null : Uri.tryParse(endpointValue),
-      authToken: authToken,
     );
   }
 
@@ -40,16 +40,16 @@ class AiPackGenerator {
       return null;
     }
 
+    final idToken = await idTokenProvider();
+    if (idToken == null || idToken.isEmpty) {
+      return null;
+    }
+
     final client = httpClientFactory();
     try {
       final request = await client.postUrl(target);
       request.headers.contentType = ContentType.json;
-      if (authToken.isNotEmpty) {
-        request.headers.set(
-          HttpHeaders.authorizationHeader,
-          'Bearer $authToken',
-        );
-      }
+      request.headers.set(HttpHeaders.authorizationHeader, 'Bearer $idToken');
 
       request.write(
         jsonEncode(<String, dynamic>{
@@ -119,3 +119,7 @@ class AiPackGenerator {
 }
 
 HttpClient _defaultHttpClient() => HttpClient();
+
+Future<String?> _defaultIdTokenProvider() async {
+  return FirebaseAuth.instance.currentUser?.getIdToken();
+}

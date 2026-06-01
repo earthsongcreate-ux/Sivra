@@ -16,7 +16,6 @@ class BootstrapScreen extends StatefulWidget {
 
 class _BootstrapScreenState extends State<BootstrapScreen> {
   late Future<_BootstrapState> _future;
-  bool _completedOnboardingThisSession = false;
 
   @override
   void initState() {
@@ -38,7 +37,8 @@ class _BootstrapScreenState extends State<BootstrapScreen> {
     }
 
     var profileUnavailable = false;
-    final profile = await FirestoreService.instance.getProfile(user.uid)
+    final profile = await FirestoreService.instance
+        .getProfile(user.uid)
         .catchError((Object error) {
           profileUnavailable = true;
           debugPrint('Sivra startup profile unavailable: $error');
@@ -77,7 +77,7 @@ class _BootstrapScreenState extends State<BootstrapScreen> {
           return const Scaffold(body: Center(child: Text('Unable to start')));
         }
 
-        if (state.hasProfile && _completedOnboardingThisSession) {
+        if (state.hasProfile) {
           return const TodayScreen();
         }
 
@@ -86,7 +86,6 @@ class _BootstrapScreenState extends State<BootstrapScreen> {
           allowLocalCompletion: state.localOnly,
           analyticsEnabled: !state.localOnly,
           onCompleted: () {
-            _completedOnboardingThisSession = true;
             setState(() {
               _future = Future.value(
                 _BootstrapState(uid: state.uid, hasProfile: true),

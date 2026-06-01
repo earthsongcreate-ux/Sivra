@@ -25,6 +25,12 @@ flutter build ipa --release \
   --dart-define=SIVRA_DIAGNOSTICS=false
 ```
 
+For a local unsigned archive validation:
+
+```sh
+../../scripts/testflight-archive-dry-run.sh
+```
+
 See `docs/setup/testflight-store-configuration-pass.md` from the repo root for the full release-candidate checklist.
 
 ## Landing Page

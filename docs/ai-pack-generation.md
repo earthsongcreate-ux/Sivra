@@ -6,8 +6,7 @@ Configure the app with:
 
 ```sh
 flutter run \
-  --dart-define=SIVRA_AI_PACK_ENDPOINT=https://your-api.example.com/sivra/daily-pack \
-  --dart-define=SIVRA_AI_PACK_TOKEN=optional-client-token
+  --dart-define=SIVRA_AI_PACK_ENDPOINT=https://your-api.example.com/sivra/daily-pack
 ```
 
 The included Firebase Functions endpoint is `generateDailyPack`. After deploy, use that HTTPS URL as `SIVRA_AI_PACK_ENDPOINT`.
@@ -18,7 +17,9 @@ Server configuration:
 firebase functions:secrets:set OPENAI_API_KEY
 ```
 
-Set `OPENAI_MODEL` in the functions environment before deploy. If you want a simple client token, set `SIVRA_AI_PACK_TOKEN` in the same environment and pass it to the app as `SIVRA_AI_PACK_TOKEN`.
+Set `OPENAI_MODEL` in the functions environment before deploy. The app sends
+the signed-in Firebase user's ID token and the function verifies it before
+generating a pack.
 
 Keeping the model in configuration makes model upgrades explicit.
 

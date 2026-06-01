@@ -8,7 +8,6 @@ Sivra uses Dart defines for app-side environment configuration.
 | --- | --- | --- |
 | `SIVRA_BUILD_CHANNEL` | Labels the build channel in Diagnostics. | `local`, `testflight`, `production` |
 | `SIVRA_AI_PACK_ENDPOINT` | HTTPS endpoint for AI daily pack generation. | Firebase Function URL |
-| `SIVRA_AI_PACK_TOKEN` | Optional bearer token sent to the AI endpoint. | Shared endpoint token |
 | `SIVRA_DIAGNOSTICS` | Shows or hides Diagnostics entry point. | `true` or `false` |
 | `SIVRA_REVENUECAT_IOS_KEY` | RevenueCat public iOS SDK key. | `appl_...` |
 | `SIVRA_REVENUECAT_ANDROID_KEY` | RevenueCat public Android SDK key. | `goog_...` |
@@ -55,6 +54,7 @@ The `generateDailyPack` function expects:
 
 - `OPENAI_API_KEY`
 - `OPENAI_MODEL`
-- optional `SIVRA_AI_PACK_TOKEN`
 
 Do not place the OpenAI API key in the Flutter app.
+The app sends the signed-in Firebase user's ID token to the function. The
+function verifies that token and checks that it matches the requested user id.

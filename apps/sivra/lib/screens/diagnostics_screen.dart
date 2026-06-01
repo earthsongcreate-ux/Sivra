@@ -23,8 +23,8 @@ class DiagnosticsScreen extends StatelessWidget {
               emptyValue: 'Not configured',
             ),
             const _DiagnosticRow(
-              label: 'AI token',
-              value: AppEnvironment.hasAiPackToken ? 'Configured' : 'Missing',
+              label: 'AI authentication',
+              value: 'Firebase ID token',
             ),
             const _DiagnosticRow(
               label: 'Diagnostics',

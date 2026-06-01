@@ -2,7 +2,6 @@ class AppEnvironment {
   static const aiPackEndpoint = String.fromEnvironment(
     'SIVRA_AI_PACK_ENDPOINT',
   );
-  static const hasAiPackToken = bool.hasEnvironment('SIVRA_AI_PACK_TOKEN');
   static const buildChannel = String.fromEnvironment(
     'SIVRA_BUILD_CHANNEL',
     defaultValue: 'dev',

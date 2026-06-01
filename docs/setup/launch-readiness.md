@@ -14,7 +14,6 @@ flutter build ios \
   --dart-define=SIVRA_MONTHLY_PRODUCT_ID=sivra_monthly_1299 \
   --dart-define=SIVRA_ANNUAL_PRODUCT_ID=sivra_annual_9999 \
   --dart-define=SIVRA_AI_PACK_ENDPOINT=https://your-function-url \
-  --dart-define=SIVRA_AI_PACK_TOKEN=optional-client-token \
   --dart-define=SIVRA_DIAGNOSTICS=false
 ```
 
