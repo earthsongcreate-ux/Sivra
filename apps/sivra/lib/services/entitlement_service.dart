@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
+import 'package:purchases_ui_flutter/purchases_ui_flutter.dart';
 
 import '../config/app_environment.dart';
 import '../models/entitlement_state.dart';
@@ -62,6 +63,16 @@ class EntitlementService {
         message: 'Unable to load purchase status.',
       );
     }
+  }
+
+  Future<EntitlementState> presentHostedPaywallIfNeeded() async {
+    if (!_configured) {
+      return currentState();
+    }
+
+    await RevenueCatUI.presentPaywallIfNeeded('sivra_pro');
+    await Purchases.invalidateCustomerInfoCache();
+    return currentState();
   }
 
   Future<List<Package>> availablePackages() async {

@@ -125,37 +125,44 @@ export const generateDailyPack = onRequest(
       return;
     }
 
-    const aiResponse = await client.responses.create({
-      model,
-      input: [
-        {
-          role: "system",
-          content:
-            "You generate concise AI fluency daily packs for founders and operators. Return only valid structured JSON. Use credible, inspectable source metadata for the two briefing items. Do not invent URLs; use stable publisher/source pages if exact news URLs are unavailable.",
+    let aiResponse;
+    try {
+      aiResponse = await client.responses.create({
+        model,
+        input: [
+          {
+            role: "system",
+            content:
+              "You generate concise AI fluency daily packs for founders and operators. Return only valid structured JSON. Use credible, inspectable source metadata for the two briefing items. Do not invent URLs; use stable publisher/source pages if exact news URLs are unavailable.",
+          },
+          {
+            role: "user",
+            content: [
+              `Create Sivra's daily pack for ${dayId}.`,
+              `Focus areas: ${focusAreas.join(", ")}.`,
+              learningProfile ? `Personalization guidance: ${learningProfile.guidance || ""}` : "",
+              learningProfile?.weakDrillTypes
+                ? `Weak drill types: ${learningProfile.weakDrillTypes.join(", ")}.`
+                : "",
+              "The pack must have exactly 8 items: 2 sourced briefings, 4 short drills, screen 7 as an articulation exercise, and screen 8 as a review item.",
+              "Keep prompts practical and concise. Non-articulation items need answer and explanation. Articulation answer must be null.",
+            ].join("\n"),
+          },
+        ],
+        text: {
+          format: {
+            type: "json_schema",
+            name: "sivra_daily_pack",
+            schema: packSchema,
+            strict: true,
+          },
         },
-        {
-          role: "user",
-          content: [
-            `Create Sivra's daily pack for ${dayId}.`,
-            `Focus areas: ${focusAreas.join(", ")}.`,
-            learningProfile ? `Personalization guidance: ${learningProfile.guidance || ""}` : "",
-            learningProfile?.weakDrillTypes
-              ? `Weak drill types: ${learningProfile.weakDrillTypes.join(", ")}.`
-              : "",
-            "The pack must have exactly 8 items: 2 sourced briefings, 4 short drills, screen 7 as an articulation exercise, and screen 8 as a review item.",
-            "Keep prompts practical and concise. Non-articulation items need answer and explanation. Articulation answer must be null.",
-          ].join("\n"),
-        },
-      ],
-      text: {
-        format: {
-          type: "json_schema",
-          name: "sivra_daily_pack",
-          schema: packSchema,
-          strict: true,
-        },
-      },
-    });
+      });
+    } catch (error) {
+      console.error("AI provider request failed", error);
+      response.status(503).json({ error: "AI provider unavailable" });
+      return;
+    }
 
     const outputText = aiResponse.output_text;
     const parsed = JSON.parse(outputText);

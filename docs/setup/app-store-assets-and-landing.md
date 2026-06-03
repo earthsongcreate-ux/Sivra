@@ -85,7 +85,7 @@ Recommended first set:
 6. Learning Memory or Weekly Recap
    - Caption idea: `Track your answers and build durable fluency.`
 7. Sivra Pro paywall
-   - Caption idea: `Try AI-generated daily packs with a 7-day trial.`
+   - Caption idea: `Try AI-generated daily packs with a 7-day annual trial.`
 
 See `docs/setup/app-store-screenshot-capture-plan.md` for benefit headlines, raw capture names, and screenshot QA rules.
 

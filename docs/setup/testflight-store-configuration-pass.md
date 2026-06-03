@@ -67,14 +67,14 @@ Products:
 
 | Product | Product ID | Price | Trial |
 | --- | --- | --- | --- |
-| Monthly | `sivra_monthly_1299` | `$12.99/month` | 7-day free trial |
+| Monthly | `sivra_monthly_1299` | `$12.99/month` | No trial |
 | Annual | `sivra_annual_9999` | `$99.99/year` | 7-day free trial |
 
 App Store Connect:
 
 - Create the auto-renewable subscriptions.
 - Add localized display names and descriptions.
-- Add the 7-day free trial as an introductory offer.
+- Add the 7-day free trial only to the annual subscription as an introductory offer.
 - Confirm pricing is correct in target storefronts.
 - Confirm products are cleared for sale.
 
@@ -82,8 +82,9 @@ RevenueCat:
 
 - Create entitlement `sivra_pro`.
 - Attach both products to the entitlement.
-- Create or update the current offering.
-- Add monthly and annual packages to the current offering.
+- Create or update offering `default` and make it current.
+- Add `$rc_monthly` -> `sivra_monthly_1299`.
+- Add `$rc_annual` -> `sivra_annual_9999`.
 - Confirm RevenueCat public iOS SDK key is used for `SIVRA_REVENUECAT_IOS_KEY`.
 
 Expected app behavior:

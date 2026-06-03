@@ -141,7 +141,7 @@ class _PaywallPreview extends StatelessWidget {
             Text('Unlock AI Pack Generation', style: textTheme.headlineSmall),
             const SizedBox(height: 10),
             Text(
-              'Start with a 7-day free trial. Sivra Pro creates fresh daily packs from your focus areas, learning memory, and trusted source rules.',
+              'Sivra Pro creates fresh daily packs from your focus areas, learning memory, and trusted source rules.',
               style: textTheme.bodyMedium?.copyWith(
                 color: colors.onSurface.withValues(alpha: 0.74),
               ),
@@ -161,14 +161,10 @@ class _PaywallPreview extends StatelessWidget {
             ),
             const SizedBox(height: 22),
             const _PreviewPlanTile(
-              title: 'Annual',
-              detail: '7-day free trial, then \$99.99 per year.',
-              badge: 'Best value',
-            ),
-            const SizedBox(height: 12),
-            const _PreviewPlanTile(
-              title: 'Monthly',
-              detail: '7-day free trial, then \$12.99 per month.',
+              title: 'RevenueCat hosted paywall',
+              detail:
+                  'Pricing, trials, packages, and button copy are managed from the RevenueCat dashboard.',
+              buttonLabel: 'Open hosted paywall',
             ),
             const SizedBox(height: 16),
             TextButton(
@@ -209,12 +205,12 @@ class _PreviewBenefit extends StatelessWidget {
 class _PreviewPlanTile extends StatelessWidget {
   final String title;
   final String detail;
-  final String? badge;
+  final String buttonLabel;
 
   const _PreviewPlanTile({
     required this.title,
     required this.detail,
-    this.badge,
+    required this.buttonLabel,
   });
 
   @override
@@ -235,13 +231,6 @@ class _PreviewPlanTile extends StatelessWidget {
             Row(
               children: [
                 Expanded(child: Text(title, style: textTheme.titleMedium)),
-                if (badge != null)
-                  Text(
-                    badge!,
-                    style: textTheme.labelMedium?.copyWith(
-                      color: colors.primary,
-                    ),
-                  ),
               ],
             ),
             const SizedBox(height: 6),
@@ -254,10 +243,7 @@ class _PreviewPlanTile extends StatelessWidget {
             const SizedBox(height: 12),
             SizedBox(
               width: double.infinity,
-              child: FilledButton(
-                onPressed: () {},
-                child: const Text('Start free trial'),
-              ),
+              child: FilledButton(onPressed: () {}, child: Text(buttonLabel)),
             ),
           ],
         ),

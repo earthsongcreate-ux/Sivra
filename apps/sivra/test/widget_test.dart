@@ -9,7 +9,6 @@ import 'package:sivra/models/learning_profile.dart';
 import 'package:sivra/models/source_audit.dart';
 import 'package:sivra/models/weekly_recap.dart';
 import 'package:sivra/screens/onboarding_screen.dart';
-import 'package:sivra/screens/paywall_screen.dart';
 import 'package:sivra/screens/today_screen.dart';
 import 'package:sivra/services/daily_pack_validator.dart';
 import 'package:sivra/services/personalization_engine.dart';
@@ -94,41 +93,42 @@ void main() {
     expect(selectedBoxes.where((box) => box.value == true), hasLength(3));
   });
 
-  testWidgets('onboarding can complete locally when startup sync is unavailable', (
-    WidgetTester tester,
-  ) async {
-    var completed = false;
-    var completedFocus = <String>[];
+  testWidgets(
+    'onboarding can complete locally when startup sync is unavailable',
+    (WidgetTester tester) async {
+      var completed = false;
+      var completedFocus = <String>[];
 
-    await tester.pumpWidget(
-      MaterialApp(
-        theme: SivraTheme.light(),
-        darkTheme: SivraTheme.dark(),
-        themeMode: ThemeMode.dark,
-        home: OnboardingScreen(
-          uid: 'local-startup',
-          initialStepIndex: 2,
-          allowLocalCompletion: true,
-          onCompleted: () {
-            completed = true;
-          },
-          onCompletedWithFocus: (focusAreas) {
-            completedFocus = focusAreas;
-          },
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: SivraTheme.light(),
+          darkTheme: SivraTheme.dark(),
+          themeMode: ThemeMode.dark,
+          home: OnboardingScreen(
+            uid: 'local-startup',
+            initialStepIndex: 2,
+            allowLocalCompletion: true,
+            onCompleted: () {
+              completed = true;
+            },
+            onCompletedWithFocus: (focusAreas) {
+              completedFocus = focusAreas;
+            },
+          ),
         ),
-      ),
-    );
+      );
 
-    await tester.tap(find.text('Founder'));
-    await tester.pump();
-    await tester.tap(find.text('Continue'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Start Day 1'));
-    await tester.pumpAndSettle();
+      await tester.tap(find.text('Founder'));
+      await tester.pump();
+      await tester.tap(find.text('Continue'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Start Day 1'));
+      await tester.pumpAndSettle();
 
-    expect(completed, isTrue);
-    expect(completedFocus, contains('Product strategy'));
-  });
+      expect(completed, isTrue);
+      expect(completedFocus, contains('Product strategy'));
+    },
+  );
 
   testWidgets('daily pack advances, goes back by item, and finishes', (
     WidgetTester tester,
@@ -184,38 +184,6 @@ void main() {
     expect(find.text('Done'), findsOneWidget);
     expect(find.text('Answers'), findsOneWidget);
     expect(find.text('1'), findsOneWidget);
-  });
-
-  testWidgets('paywall falls back gracefully without RevenueCat config', (
-    WidgetTester tester,
-  ) async {
-    await tester.pumpWidget(
-      MaterialApp(
-        theme: SivraTheme.light(),
-        darkTheme: SivraTheme.dark(),
-        themeMode: ThemeMode.dark,
-        home: const PaywallScreen(),
-      ),
-    );
-    await tester.pumpAndSettle();
-
-    expect(find.text('Sivra Pro'), findsOneWidget);
-    expect(find.text('Unlock AI Pack Generation'), findsOneWidget);
-    expect(
-      find.text(
-        'RevenueCat offerings are not available in this build. Free curated packs remain available.',
-      ),
-      findsOneWidget,
-    );
-    expect(find.text('Restore purchases'), findsOneWidget);
-    await tester.tap(find.text('Restore purchases'));
-    await tester.pumpAndSettle();
-
-    expect(
-      find.text('No active Sivra Pro purchase was found.'),
-      findsOneWidget,
-    );
-    expect(find.text('Continue free'), findsOneWidget);
   });
 
   test('daily pack validator accepts the generated pack shape', () {

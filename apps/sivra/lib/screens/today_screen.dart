@@ -17,7 +17,6 @@ import 'diagnostics_screen.dart';
 import 'drill_flow_screen.dart';
 import 'history_screen.dart';
 import 'learning_memory_screen.dart';
-import 'paywall_screen.dart';
 import 'source_trust_admin_screen.dart';
 import 'weekly_recap_screen.dart';
 
@@ -182,11 +181,10 @@ class _TodayScreenState extends State<TodayScreen> {
   }
 
   Future<void> _openPaywall() async {
-    final entitlement = await Navigator.of(context).push<EntitlementState>(
-      MaterialPageRoute(builder: (context) => const PaywallScreen()),
-    );
+    final entitlement = await EntitlementService.instance
+        .presentHostedPaywallIfNeeded();
 
-    if (!mounted || entitlement?.isPro != true) {
+    if (!mounted || !entitlement.isPro) {
       return;
     }
 
@@ -592,7 +590,7 @@ class _ProPrompt extends StatelessWidget {
                   Text('Sivra Pro', style: textTheme.titleMedium),
                   const SizedBox(height: 4),
                   Text(
-                    'Start a 7-day trial for AI-generated packs.',
+                    'Upgrade to unlock AI-generated daily packs.',
                     style: textTheme.bodySmall?.copyWith(
                       color: colors.onSurface.withValues(alpha: 0.72),
                     ),

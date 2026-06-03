@@ -39,7 +39,7 @@ Sivra is built for people who need to explain AI clearly, evaluate tradeoffs, an
 Sivra Pro unlocks AI-generated daily packs when available. Free users can continue with curated packs.
 
 Subscription details:
-Monthly: $12.99 per month after a 7-day free trial.
+Monthly: $12.99 per month with no trial.
 Annual: $99.99 per year after a 7-day free trial.
 
 Subscriptions renew automatically unless canceled at least 24 hours before the end of the current period. You can manage or cancel subscriptions in your App Store account settings.

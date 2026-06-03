@@ -1,14 +1,13 @@
 # Sivra Paywall and RevenueCat Setup
 
-Milestone 7 adds a custom Sivra paywall, RevenueCat entitlement checks, and AI pack gating.
+Sivra uses RevenueCat entitlement checks, hosted RevenueCat paywalls, and AI pack gating.
 
 ## Recommended Offer
 
-- 7-day free trial.
-- Monthly: `$12.99`.
-- Annual: `$99.99`.
+- Monthly: `$12.99`, no trial.
+- Annual: `$99.99`, 7-day free trial.
 
-The annual plan is the better anchor because it gives committed learners a meaningful discount while keeping the monthly plan available for cautious users.
+RevenueCat and App Store Connect are the source of truth for pricing, trial, and paywall copy.
 
 ## RevenueCat Dashboard
 
@@ -17,9 +16,13 @@ Create these products in App Store Connect and Google Play, then attach them to 
 - Monthly product ID: `sivra_monthly_1299`
 - Annual product ID: `sivra_annual_9999`
 - Entitlement ID: `sivra_pro`
-- Offering: make the monthly and annual packages available in the current offering.
+- Offering: `default`, configured as the current offering.
+- Monthly package: `$rc_monthly` -> `sivra_monthly_1299`.
+- Annual package: `$rc_annual` -> `sivra_annual_9999`.
 
-Both subscriptions should include the 7-day free trial in the store configuration. The app copy assumes that trial is active.
+Only the annual subscription should include the 7-day free trial in the store configuration. The monthly plan is a straight subscription with no trial.
+
+The hosted RevenueCat paywall connected to the current `default` offering is presented from the app with `RevenueCatUI.presentPaywallIfNeeded("sivra_pro")`.
 
 ## App Build Flags
 
@@ -59,8 +62,8 @@ Use `SIVRA_REVENUECAT_ANDROID_KEY` for Android builds.
 - Fresh install opens Focus screen.
 - Completing Focus lands on Today.
 - Today shows the Sivra Pro prompt for free users.
-- Paywall opens and lists monthly and annual packages when RevenueCat is configured.
-- Continue free closes the paywall and leaves curated packs available.
+- Hosted RevenueCat paywall opens when RevenueCat is configured and `sivra_pro` is not active.
+- Closing the hosted paywall without purchase leaves curated packs available.
 - Restore purchases activates Pro for a valid subscribed test account.
 - Pro account creates an AI-generated pack when the AI endpoint is configured.
 - Free account creates a `curated_free_v1` pack.
