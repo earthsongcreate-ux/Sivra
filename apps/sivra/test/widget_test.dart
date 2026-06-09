@@ -262,6 +262,141 @@ void main() {
   });
 
   testWidgets(
+    'onboarding completion presents paywall before continuing free into the app',
+    (WidgetTester tester) async {
+      var completed = false;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: SivraTheme.light(),
+          darkTheme: SivraTheme.dark(),
+          themeMode: ThemeMode.dark,
+          routes: <String, WidgetBuilder>{
+            AppShell.routeName: (_) => const Scaffold(body: Text('App Shell')),
+          },
+          home: OnboardingScreen(
+            uid: 'test',
+            initialStepIndex: 2,
+            allowLocalCompletion: true,
+            analyticsEnabled: false,
+            onCompleted: () {
+              completed = true;
+            },
+            paywallBuilder: (_) => const PaywallScreen(
+              previewPlans: <PaywallPlan>[
+                PaywallPlan(
+                  id: 'annual',
+                  price: r'$99.99/year',
+                  recommended: true,
+                  hasTrial: true,
+                ),
+                PaywallPlan(
+                  id: 'monthly',
+                  price: r'$12.99/month',
+                  recommended: false,
+                  hasTrial: false,
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('Founder'));
+      await tester.pump();
+      await tester.tap(find.text('Continue'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Begin My Ritual'));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text('Continue Building Your Thinking System'),
+        findsOneWidget,
+      );
+      expect(completed, isFalse);
+
+      await tester.scrollUntilVisible(
+        find.text('Continue Free'),
+        400,
+        scrollable: find.byType(Scrollable).last,
+      );
+      await tester.tap(find.text('Continue Free'));
+      await tester.pumpAndSettle();
+
+      expect(completed, isTrue);
+      expect(find.text('App Shell'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'onboarding continues after a successful subscription from the paywall',
+    (WidgetTester tester) async {
+      var completed = false;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: SivraTheme.light(),
+          darkTheme: SivraTheme.dark(),
+          themeMode: ThemeMode.dark,
+          routes: <String, WidgetBuilder>{
+            AppShell.routeName: (_) => const Scaffold(body: Text('App Shell')),
+          },
+          home: OnboardingScreen(
+            uid: 'test',
+            initialStepIndex: 2,
+            allowLocalCompletion: true,
+            analyticsEnabled: false,
+            onCompleted: () {
+              completed = true;
+            },
+            paywallBuilder: (_) => PaywallScreen(
+              previewPlans: const <PaywallPlan>[
+                PaywallPlan(
+                  id: 'annual',
+                  price: r'$99.99/year',
+                  recommended: true,
+                  hasTrial: true,
+                ),
+                PaywallPlan(
+                  id: 'monthly',
+                  price: r'$12.99/month',
+                  recommended: false,
+                  hasTrial: false,
+                ),
+              ],
+              previewPurchase: (planId) async {
+                return const EntitlementState(
+                  isConfigured: true,
+                  isPro: true,
+                  entitlementId: 'sivra_pro',
+                  activeProductId: 'sivra_annual_9999',
+                );
+              },
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('Founder'));
+      await tester.pump();
+      await tester.tap(find.text('Continue'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Begin My Ritual'));
+      await tester.pumpAndSettle();
+      await tester.scrollUntilVisible(
+        find.byKey(const ValueKey('purchase-annual')),
+        400,
+        scrollable: find.byType(Scrollable).last,
+      );
+      await tester.tap(find.byKey(const ValueKey('purchase-annual')));
+      await tester.pumpAndSettle();
+
+      expect(completed, isTrue);
+      expect(find.text('App Shell'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
     'onboarding can complete locally when startup sync is unavailable',
     (WidgetTester tester) async {
       var completed = false;
@@ -282,6 +417,22 @@ void main() {
             onCompletedWithFocus: (focusAreas) {
               completedFocus = focusAreas;
             },
+            paywallBuilder: (_) => const PaywallScreen(
+              previewPlans: <PaywallPlan>[
+                PaywallPlan(
+                  id: 'annual',
+                  price: r'$99.99/year',
+                  recommended: true,
+                  hasTrial: true,
+                ),
+                PaywallPlan(
+                  id: 'monthly',
+                  price: r'$12.99/month',
+                  recommended: false,
+                  hasTrial: false,
+                ),
+              ],
+            ),
           ),
         ),
       );
@@ -291,6 +442,13 @@ void main() {
       await tester.tap(find.text('Continue'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Begin My Ritual'));
+      await tester.pumpAndSettle();
+      await tester.scrollUntilVisible(
+        find.text('Continue Free'),
+        400,
+        scrollable: find.byType(Scrollable).last,
+      );
+      await tester.tap(find.text('Continue Free'));
       await tester.pumpAndSettle();
 
       expect(completed, isTrue);
@@ -638,7 +796,7 @@ void main() {
     expect(find.text('Recommended'), findsOneWidget);
     expect(find.text('7-Day Free Trial'), findsOneWidget);
     expect(find.text(r'$99.99/year'), findsOneWidget);
-    expect(find.text(r'$8.33/month equivalent'), findsNothing);
+    expect(find.text(r'Equivalent to $8.33/month'), findsNothing);
     expect(find.text('Save 36%'), findsOneWidget);
     expect(find.textContaining(r'$55.89'), findsNothing);
     expect(find.text(r'$12.99/month'), findsOneWidget);
@@ -774,57 +932,87 @@ void main() {
     ]);
   });
 
-  testWidgets('custom paywall keeps footer actions visible on small devices', (
+  testWidgets('custom paywall scrolls cleanly across target iPhone viewports', (
     WidgetTester tester,
   ) async {
-    tester.view.physicalSize = const Size(320, 568);
     tester.view.devicePixelRatio = 1;
     tester.view.viewPadding = const FakeViewPadding(bottom: 20);
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
     addTearDown(tester.view.resetViewPadding);
 
-    await tester.pumpWidget(
-      MaterialApp(
-        theme: SivraTheme.light(),
-        darkTheme: SivraTheme.dark(),
-        themeMode: ThemeMode.dark,
-        home: PaywallScreen(
-          previewPlans: const <PaywallPlan>[
-            PaywallPlan(
-              id: 'annual',
-              price: r'$99.99/year',
-              recommended: true,
-              hasTrial: true,
-            ),
-            PaywallPlan(
-              id: 'monthly',
-              price: r'$12.99/month',
-              recommended: false,
-              hasTrial: false,
-            ),
-          ],
+    for (final size in const <Size>[
+      Size(320, 568),
+      Size(390, 844),
+      Size(402, 874),
+    ]) {
+      tester.view.physicalSize = size;
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: SivraTheme.light(),
+          darkTheme: SivraTheme.dark(),
+          themeMode: ThemeMode.dark,
+          home: const PaywallScreen(
+            previewPlans: <PaywallPlan>[
+              PaywallPlan(
+                id: 'annual',
+                price: r'$99.99/year',
+                recommended: true,
+                hasTrial: true,
+              ),
+              PaywallPlan(
+                id: 'monthly',
+                price: r'$12.99/month',
+                recommended: false,
+                hasTrial: false,
+              ),
+            ],
+          ),
         ),
-      ),
-    );
-    await tester.pumpAndSettle();
+      );
+      await tester.pumpAndSettle();
 
-    final viewportHeight = tester.view.physicalSize.height;
-    const safeBottom = 20.0;
+      expect(find.byType(SingleChildScrollView), findsOneWidget);
+      expect(find.byKey(const ValueKey('plan-annual')), findsOneWidget);
+      expect(find.byKey(const ValueKey('plan-monthly')), findsOneWidget);
+      expect(tester.takeException(), isNull);
 
-    expect(find.text('Restore Purchases'), findsOneWidget);
-    expect(find.text('Continue Free'), findsOneWidget);
-    expect(find.text('Privacy Policy'), findsOneWidget);
-    expect(find.text('Terms of Use'), findsOneWidget);
+      final benefitRects = <Rect>[
+        tester.getRect(
+          find.byKey(const ValueKey('benefit-Personalized Daily Rituals')),
+        ),
+        tester.getRect(find.byKey(const ValueKey('benefit-Thinking Archive'))),
+        tester.getRect(find.byKey(const ValueKey('benefit-Weekly Recaps'))),
+        tester.getRect(
+          find.byKey(const ValueKey('benefit-Fresh Source Context')),
+        ),
+      ];
+      expect(benefitRects.map((rect) => rect.height).toSet(), hasLength(1));
 
-    expect(
-      tester.getBottomLeft(find.text('Restore Purchases')).dy,
-      lessThanOrEqualTo(viewportHeight - safeBottom),
-    );
-    expect(
-      tester.getBottomLeft(find.text('Privacy Policy')).dy,
-      lessThanOrEqualTo(viewportHeight - safeBottom),
-    );
+      await tester.scrollUntilVisible(
+        find.text('Continue Free'),
+        350,
+        scrollable: find.byType(Scrollable).last,
+      );
+
+      final annualRect = tester.getRect(
+        find.byKey(const ValueKey('plan-annual')),
+      );
+      final monthlyRect = tester.getRect(
+        find.byKey(const ValueKey('plan-monthly')),
+      );
+      final footerRect = tester.getRect(find.text('Restore Purchases'));
+
+      expect(monthlyRect.top, closeTo(annualRect.top, 0.1));
+      expect(monthlyRect.height, closeTo(annualRect.height, 0.1));
+      expect(footerRect.top, greaterThan(annualRect.bottom));
+      expect(find.text(r'Equivalent to $8.33/month'), findsNothing);
+      expect(find.text('Privacy Policy'), findsOneWidget);
+      expect(find.text('Terms of Use'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+
+      await tester.pumpWidget(const SizedBox.shrink());
+    }
   });
 
   test('daily pack validator accepts the generated pack shape', () {

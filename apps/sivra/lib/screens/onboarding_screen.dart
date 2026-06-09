@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../design/sivra_colors.dart';
 import '../services/firestore_service.dart';
 import 'app_shell.dart';
+import 'paywall_screen.dart';
 
 class OnboardingScreen extends StatefulWidget {
   final String uid;
@@ -14,6 +15,7 @@ class OnboardingScreen extends StatefulWidget {
   final List<String> initialSelectedFocus;
   final int initialStepIndex;
   final bool allowLocalCompletion;
+  final WidgetBuilder? paywallBuilder;
 
   const OnboardingScreen({
     super.key,
@@ -24,6 +26,7 @@ class OnboardingScreen extends StatefulWidget {
     this.initialSelectedFocus = const <String>[],
     this.initialStepIndex = 0,
     this.allowLocalCompletion = false,
+    this.paywallBuilder,
   });
 
   @override
@@ -147,7 +150,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       );
     } catch (_) {
       if (widget.allowLocalCompletion) {
-        _finish(focusAreas);
+        await _finish(focusAreas);
         return;
       }
 
@@ -167,10 +170,20 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       return;
     }
 
-    _finish(focusAreas);
+    await _finish(focusAreas);
   }
 
-  void _finish(List<String> focusAreas) {
+  Future<void> _finish(List<String> focusAreas) async {
+    if (!mounted) {
+      return;
+    }
+
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        builder: widget.paywallBuilder ?? (_) => const PaywallScreen(),
+      ),
+    );
+
     if (!mounted) {
       return;
     }

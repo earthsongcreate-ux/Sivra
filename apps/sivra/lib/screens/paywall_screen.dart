@@ -304,118 +304,113 @@ class _PaywallContent extends StatelessWidget {
     final monthly = plans.firstWhere((plan) => !plan.isAnnual);
     final compactHeight = MediaQuery.sizeOf(context).height <= 600;
 
-    return Column(
-      children: [
-        Expanded(
-          child: ListView(
-            padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
-            children: [
-              _PaywallHero(compact: compactHeight),
-              SizedBox(height: compactHeight ? 18 : 24),
-              Text(
-                'WHAT CONTINUES WITH SIVRA PRO',
-                style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                  color: SivraColors.bronze,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: 1.2,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return SingleChildScrollView(
+          padding: EdgeInsets.fromLTRB(20, 14, 20, compactHeight ? 12 : 18),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: constraints.maxHeight - 32),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _PaywallHero(compact: compactHeight),
+                SizedBox(height: compactHeight ? 18 : 20),
+                Text(
+                  'WHAT CONTINUES WITH SIVRA PRO',
+                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                    color: SivraColors.bronze,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 1.2,
+                  ),
                 ),
-              ),
-              SizedBox(height: compactHeight ? 10 : 12),
-              _BenefitsGrid(
-                compact: compactHeight,
-                benefits: <_BenefitData>[
-                  _BenefitData(
-                    icon: Icons.tune_rounded,
-                    title: 'Personalized Daily Rituals',
-                    detail: 'Shaped by your focus areas.',
-                  ),
-                  _BenefitData(
-                    icon: Icons.auto_stories_outlined,
-                    title: 'Thinking Archive',
-                    detail: 'Keep your best ideas and insights.',
-                  ),
-                  _BenefitData(
-                    icon: Icons.calendar_view_week_outlined,
-                    title: 'Weekly Recaps',
-                    detail: 'Reflect on patterns over time.',
-                  ),
-                  _BenefitData(
-                    icon: Icons.radar_outlined,
-                    title: 'Fresh Source Context',
-                    detail: 'Stay current with selected signals.',
-                  ),
-                ],
-              ),
-              SizedBox(height: compactHeight ? 10 : 14),
-              Text(
-                'CHOOSE YOUR PLAN',
-                style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                  color: SivraColors.bronze,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: 1.2,
+                SizedBox(height: compactHeight ? 10 : 12),
+                _BenefitsGrid(
+                  compact: compactHeight,
+                  benefits: const <_BenefitData>[
+                    _BenefitData(
+                      icon: Icons.tune_rounded,
+                      title: 'Personalized Daily Rituals',
+                      detail: 'Shaped by your focus areas.',
+                    ),
+                    _BenefitData(
+                      icon: Icons.auto_stories_outlined,
+                      title: 'Thinking Archive',
+                      detail: 'Keep your best ideas and insights.',
+                    ),
+                    _BenefitData(
+                      icon: Icons.calendar_view_week_outlined,
+                      title: 'Weekly Recaps',
+                      detail: 'Reflect on patterns over time.',
+                    ),
+                    _BenefitData(
+                      icon: Icons.radar_outlined,
+                      title: 'Fresh Source Context',
+                      detail: 'Stay current with selected signals.',
+                    ),
+                  ],
                 ),
-              ),
-              SizedBox(height: compactHeight ? 4 : 6),
-              _PricingSection(
-                annual: annual,
-                monthly: monthly,
-                processingPlanId: processingPlanId,
-                disabled: processingPlanId != null || restoring,
-                onPurchase: onPurchase,
-                compactHeight: compactHeight,
-              ),
-              const SizedBox(height: 2),
-            ],
-          ),
-        ),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(20, 0, 20, 4),
-          child: Column(
-            children: [
-              SizedBox(height: compactHeight ? 1 : 2),
-              Wrap(
-                alignment: WrapAlignment.center,
-                crossAxisAlignment: WrapCrossAlignment.center,
-                children: [
-                  _FooterAction(
-                    label: restoring ? 'Restoring...' : 'Restore Purchases',
-                    onTap: processingPlanId == null && !restoring
-                        ? onRestore
-                        : null,
+                SizedBox(height: compactHeight ? 14 : 16),
+                Text(
+                  'CHOOSE YOUR PLAN',
+                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                    color: SivraColors.bronze,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 1.2,
                   ),
-                  Text(
-                    '  |  ',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: SivraColors.mutedText.withValues(alpha: 0.42),
+                ),
+                SizedBox(height: compactHeight ? 8 : 10),
+                _PricingSection(
+                  annual: annual,
+                  monthly: monthly,
+                  processingPlanId: processingPlanId,
+                  disabled: processingPlanId != null || restoring,
+                  onPurchase: onPurchase,
+                  compactHeight: compactHeight,
+                ),
+                SizedBox(height: compactHeight ? 12 : 12),
+                Wrap(
+                  alignment: WrapAlignment.center,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    _FooterAction(
+                      label: restoring ? 'Restoring...' : 'Restore Purchases',
+                      onTap: processingPlanId == null && !restoring
+                          ? onRestore
+                          : null,
                     ),
-                  ),
-                  _FooterAction(
-                    label: 'Continue Free',
-                    onTap: processingPlanId == null && !restoring
-                        ? onContinueFree
-                        : null,
-                  ),
-                ],
-              ),
-              SizedBox(height: compactHeight ? 0 : 1),
-              Wrap(
-                alignment: WrapAlignment.center,
-                crossAxisAlignment: WrapCrossAlignment.center,
-                children: [
-                  _LegalLink(label: 'Privacy Policy', onTap: onOpenPrivacy),
-                  Text(
-                    '  •  ',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: SivraColors.mutedText.withValues(alpha: 0.6),
+                    Text(
+                      '  |  ',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: SivraColors.mutedText.withValues(alpha: 0.42),
+                      ),
                     ),
-                  ),
-                  _LegalLink(label: 'Terms of Use', onTap: onOpenTerms),
-                ],
-              ),
-            ],
+                    _FooterAction(
+                      label: 'Continue Free',
+                      onTap: processingPlanId == null && !restoring
+                          ? onContinueFree
+                          : null,
+                    ),
+                  ],
+                ),
+                Wrap(
+                  alignment: WrapAlignment.center,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    _LegalLink(label: 'Privacy Policy', onTap: onOpenPrivacy),
+                    Text(
+                      '  •  ',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: SivraColors.mutedText.withValues(alpha: 0.6),
+                      ),
+                    ),
+                    _LegalLink(label: 'Terms of Use', onTap: onOpenTerms),
+                  ],
+                ),
+              ],
+            ),
           ),
-        ),
-      ],
+        );
+      },
     );
   }
 }
@@ -513,13 +508,20 @@ class _BenefitsGrid extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         final itemWidth = (constraints.maxWidth - 10) / 2;
+        final itemHeight = itemWidth < 150
+            ? 140.0
+            : compact
+            ? 128.0
+            : 130.0;
         return Wrap(
           spacing: compact ? 8 : 10,
           runSpacing: compact ? 8 : 10,
           children: benefits
               .map(
                 (benefit) => SizedBox(
+                  key: ValueKey('benefit-${benefit.title}'),
                   width: itemWidth,
+                  height: itemHeight,
                   child: _Benefit(benefit: benefit, compact: compact),
                 ),
               )
@@ -539,7 +541,6 @@ class _Benefit extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      constraints: BoxConstraints(minHeight: compact ? 100 : 112),
       padding: EdgeInsets.fromLTRB(
         compact ? 12 : 14,
         compact ? 12 : 14,
@@ -606,45 +607,31 @@ class _PricingSection extends StatelessWidget {
         border: Border.all(color: SivraColors.bronze.withValues(alpha: 0.12)),
         borderRadius: BorderRadius.circular(26),
       ),
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final useCompactCards = constraints.maxWidth >= 300;
-          final annualCard = _PlanCard(
-            plan: annual,
-            processing: processingPlanId == annual.id,
-            disabled: disabled,
-            compact: useCompactCards,
-            onPurchase: () => onPurchase(annual),
-          );
-          final monthlyCard = _PlanCard(
-            plan: monthly,
-            processing: processingPlanId == monthly.id,
-            disabled: disabled,
-            compact: useCompactCards,
-            onPurchase: () => onPurchase(monthly),
-          );
-
-          if (constraints.maxWidth < 300) {
-            return Column(
-              children: [
-                annualCard,
-                SizedBox(height: compactHeight ? 8 : 10),
-                monthlyCard,
-              ],
-            );
-          }
-
-          return IntrinsicHeight(
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Expanded(child: annualCard),
-                SizedBox(width: compactHeight ? 8 : 10),
-                Expanded(child: monthlyCard),
-              ],
+      child: IntrinsicHeight(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Expanded(
+              child: _PlanCard(
+                plan: annual,
+                processing: processingPlanId == annual.id,
+                disabled: disabled,
+                compact: true,
+                onPurchase: () => onPurchase(annual),
+              ),
             ),
-          );
-        },
+            SizedBox(width: compactHeight ? 8 : 10),
+            Expanded(
+              child: _PlanCard(
+                plan: monthly,
+                processing: processingPlanId == monthly.id,
+                disabled: disabled,
+                compact: true,
+                onPurchase: () => onPurchase(monthly),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -711,33 +698,47 @@ class _PlanCard extends StatelessWidget {
           if (annual)
             Row(
               children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 7,
-                    vertical: 3,
-                  ),
-                  decoration: BoxDecoration(
-                    color: SivraColors.bronze.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                  child: Text(
-                    'Recommended',
-                    maxLines: 1,
-                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      color: SivraColors.bronze,
-                      fontWeight: FontWeight.w600,
-                      fontSize: compact ? 9.5 : null,
+                Expanded(
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 7,
+                          vertical: 3,
+                        ),
+                        decoration: BoxDecoration(
+                          color: SivraColors.bronze.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                        child: Text(
+                          'Recommended',
+                          maxLines: 1,
+                          style: Theme.of(context).textTheme.labelSmall
+                              ?.copyWith(
+                                color: SivraColors.bronze,
+                                fontWeight: FontWeight.w600,
+                                fontSize: compact ? 9.5 : null,
+                              ),
+                        ),
+                      ),
                     ),
                   ),
                 ),
-                const Spacer(),
-                Text(
-                  'Save 36%',
-                  maxLines: 1,
-                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: SivraColors.bronze,
-                    fontWeight: FontWeight.w700,
-                    fontSize: compact ? 9.5 : null,
+                const SizedBox(width: 4),
+                Flexible(
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      'Save 36%',
+                      maxLines: 1,
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        color: SivraColors.bronze,
+                        fontWeight: FontWeight.w700,
+                        fontSize: compact ? 9.5 : null,
+                      ),
+                    ),
                   ),
                 ),
               ],
@@ -772,15 +773,15 @@ class _PlanCard extends StatelessWidget {
                       fontWeight: FontWeight.w700,
                     ),
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 6),
           SizedBox(
             width: double.infinity,
             child: FilledButton(
               key: ValueKey('purchase-${plan.id}'),
               onPressed: disabled ? null : onPurchase,
               style: FilledButton.styleFrom(
-                minimumSize: const Size.fromHeight(42),
-                maximumSize: const Size.fromHeight(42),
+                minimumSize: const Size.fromHeight(40),
+                maximumSize: const Size.fromHeight(40),
                 backgroundColor: annual
                     ? SivraColors.bronze
                     : SivraColors.bronze.withValues(alpha: 0.17),
