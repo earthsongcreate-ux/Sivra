@@ -26,7 +26,7 @@ For archive/upload builds, use Xcode or:
 ```sh
 flutter build ipa --release \
   --dart-define=SIVRA_BUILD_CHANNEL=testflight \
-  --dart-define=SIVRA_REVENUECAT_IOS_KEY=appl_your_public_sdk_key \
+  --dart-define=SIVRA_REVENUECAT_IOS_KEY=<RevenueCat public iOS SDK key> \
   --dart-define=SIVRA_PRO_ENTITLEMENT=sivra_pro \
   --dart-define=SIVRA_MONTHLY_PRODUCT_ID=sivra_monthly_1299 \
   --dart-define=SIVRA_ANNUAL_PRODUCT_ID=sivra_annual_9999 \
@@ -85,7 +85,7 @@ RevenueCat:
 - Create or update offering `default` and make it current.
 - Add `$rc_monthly` -> `sivra_monthly_1299`.
 - Add `$rc_annual` -> `sivra_annual_9999`.
-- Confirm RevenueCat public iOS SDK key is used for `SIVRA_REVENUECAT_IOS_KEY`.
+- Confirm `SIVRA_REVENUECAT_IOS_KEY` is set to the RevenueCat public iOS SDK key from the dashboard and is never committed to docs.
 
 Expected app behavior:
 

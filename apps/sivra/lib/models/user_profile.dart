@@ -1,5 +1,6 @@
 class UserProfile {
   final String uid;
+  final String? firstName;
   final List<String> focusAreas;
   final List<String> thinkingRoles;
   final String? aiFluencyLevel;
@@ -9,6 +10,7 @@ class UserProfile {
 
   const UserProfile({
     required this.uid,
+    this.firstName,
     required this.focusAreas,
     this.thinkingRoles = const <String>[],
     this.aiFluencyLevel,
@@ -29,9 +31,18 @@ class UserProfile {
     final onboardingMap = onboarding is Map<String, dynamic>
         ? onboarding
         : const <String, dynamic>{};
+    final rawFirstName = data['firstName'];
+    final rawDisplayName = data['displayName'];
+    final displayName = rawDisplayName is String ? rawDisplayName.trim() : '';
+    final firstName = rawFirstName is String && rawFirstName.trim().isNotEmpty
+        ? rawFirstName.trim()
+        : displayName.isNotEmpty
+        ? displayName.split(RegExp(r'\s+')).first
+        : null;
 
     return UserProfile(
       uid: uid,
+      firstName: firstName,
       focusAreas: focusAreas,
       thinkingRoles: onboardingMap['thinkingRoles'] is List
           ? (onboardingMap['thinkingRoles'] as List)

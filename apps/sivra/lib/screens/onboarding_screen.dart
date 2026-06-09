@@ -1,10 +1,10 @@
 import 'dart:async';
-import 'dart:ui';
 
 import 'package:flutter/material.dart';
 
+import '../design/sivra_colors.dart';
 import '../services/firestore_service.dart';
-import 'today_screen.dart';
+import 'app_shell.dart';
 
 class OnboardingScreen extends StatefulWidget {
   final String uid;
@@ -44,6 +44,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   final Set<String> _selectedRoles = {};
   int _stepIndex = 0;
   bool _saving = false;
+  bool _brandAssetsCached = false;
 
   static const _stepCount = 4;
 
@@ -68,6 +69,16 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       name: 'onboarding_started',
       properties: const <String, dynamic>{'version': 3},
     );
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_brandAssetsCached) {
+      return;
+    }
+    _brandAssetsCached = true;
+    precacheImage(const AssetImage('assets/brand/sivra-sigil.png'), context);
   }
 
   void _back() {
@@ -171,7 +182,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       return;
     }
 
-    Navigator.of(context).pushReplacementNamed(TodayScreen.routeName);
+    Navigator.of(context).pushReplacementNamed(AppShell.routeName);
   }
 
   void _logEventSafely({
@@ -203,51 +214,74 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       return 'Saving...';
     }
     return switch (_stepIndex) {
-      1 => 'Build my pack',
-      3 => 'Start Day 1',
+      3 => 'Begin My Ritual',
       _ => 'Continue',
     };
   }
 
   @override
   Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
-
     return Scaffold(
-      appBar: AppBar(
-        leading: _stepIndex == 0
-            ? null
-            : IconButton(
-                tooltip: 'Back',
-                icon: const Icon(Icons.chevron_left),
-                onPressed: _back,
-              ),
-        title: Image.asset(
-          'assets/brand/sivra-logo-horizontal.png',
-          height: 28,
-          fit: BoxFit.contain,
-          color: colors.onSurface,
-          colorBlendMode: BlendMode.srcIn,
-          semanticLabel: 'Sivra',
-        ),
-      ),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
-          child: Column(
-            children: [
-              _ProgressDots(index: _stepIndex, count: _stepCount),
-              const SizedBox(height: 28),
-              Expanded(child: _buildStep(context)),
-              const SizedBox(height: 12),
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton(
-                  onPressed: _canContinue && !_saving ? _continue : null,
-                  child: Text(_continueLabel),
+      backgroundColor: SivraColors.deepInk,
+      body: _ChamberBackground(
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 10, 20, 24),
+            child: Column(
+              children: [
+                _OnboardingHeader(canGoBack: _stepIndex > 0, onBack: _back),
+                const SizedBox(height: 8),
+                _ProgressDots(index: _stepIndex, count: _stepCount),
+                const SizedBox(height: 12),
+                Expanded(
+                  child: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 320),
+                    switchInCurve: Curves.easeOutCubic,
+                    switchOutCurve: Curves.easeInCubic,
+                    transitionBuilder: (child, animation) {
+                      final offset = Tween<Offset>(
+                        begin: const Offset(0.035, 0),
+                        end: Offset.zero,
+                      ).animate(animation);
+                      return FadeTransition(
+                        opacity: animation,
+                        child: SlideTransition(position: offset, child: child),
+                      );
+                    },
+                    child: KeyedSubtree(
+                      key: ValueKey(_stepIndex),
+                      child: _buildStep(context),
+                    ),
+                  ),
                 ),
-              ),
-            ],
+                const SizedBox(height: 22),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton(
+                    style: FilledButton.styleFrom(
+                      minimumSize: const Size.fromHeight(58),
+                      backgroundColor: SivraColors.bronze,
+                      foregroundColor: SivraColors.deepInk,
+                      disabledBackgroundColor: SivraColors.bronze.withValues(
+                        alpha: 0.28,
+                      ),
+                      disabledForegroundColor: SivraColors.warmIvory.withValues(
+                        alpha: 0.42,
+                      ),
+                      elevation: 8,
+                      shadowColor: SivraColors.bronze.withValues(alpha: 0.25),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(22),
+                      ),
+                      textStyle: Theme.of(context).textTheme.titleMedium
+                          ?.copyWith(fontWeight: FontWeight.w700),
+                    ),
+                    onPressed: _canContinue && !_saving ? _continue : null,
+                    child: Text(_continueLabel),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -344,22 +378,31 @@ class _ProgressDots extends StatelessWidget {
     final colors = Theme.of(context).colorScheme;
 
     return Row(
+      key: const ValueKey('onboarding-progress'),
       mainAxisAlignment: MainAxisAlignment.center,
       children: List.generate(count, (dotIndex) {
-        final active = dotIndex == index;
+        final completed = dotIndex <= index;
 
         return Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 4),
+          padding: const EdgeInsets.symmetric(horizontal: 5),
           child: AnimatedContainer(
-            duration: const Duration(milliseconds: 180),
-            curve: Curves.easeOut,
-            height: active ? 8 : 7,
-            width: active ? 8 : 7,
+            duration: const Duration(milliseconds: 240),
+            curve: Curves.easeOutCubic,
+            height: 8,
+            width: 8,
             decoration: BoxDecoration(
-              color: active
+              color: completed
                   ? colors.primary
-                  : colors.onSurface.withValues(alpha: 0.28),
+                  : colors.onSurface.withValues(alpha: 0.2),
               shape: BoxShape.circle,
+              boxShadow: completed
+                  ? [
+                      BoxShadow(
+                        color: colors.primary.withValues(alpha: 0.34),
+                        blurRadius: 8,
+                      ),
+                    ]
+                  : null,
             ),
           ),
         );
@@ -373,10 +416,30 @@ class _PromiseStep extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const _CopyStep(
-      title: 'Walk into any room prepared.',
-      body:
-          'Sivra turns information into clear thinking—and helps you express it with calm, executive precision.',
+    return const _CenteredStep(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _SigilGlow(),
+          SizedBox(height: 40),
+          _HeroTitle(
+            text: 'Walk Into Any Room Prepared',
+            textAlign: TextAlign.center,
+          ),
+          SizedBox(height: 28),
+          Text(
+            'A daily thinking ritual for founders,\noperators, and builders.',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: SivraColors.mutedText,
+              fontSize: 17,
+              height: 1.5,
+            ),
+          ),
+          SizedBox(height: 30),
+          _RitualSummary(),
+        ],
+      ),
     );
   }
 }
@@ -386,35 +449,29 @@ class _RitualStep extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
-
-    return ListView(
-      children: [
-        const _StepTitle(
-          title: 'Your Daily Pack (7 min)',
-          body:
-              '2 briefings to stay current.\n\n3 thinking drills to sharpen judgment.\n\n1 articulation prompt to say it clearly.',
-        ),
-        const SizedBox(height: 28),
-        DecoratedBox(
-          decoration: BoxDecoration(
-            border: Border.all(color: colors.onSurface.withValues(alpha: 0.12)),
-            borderRadius: BorderRadius.circular(8),
-            color: colors.surface.withValues(alpha: 0.36),
-          ),
-          child: const Padding(
-            padding: EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _RitualLine(label: 'Briefings', value: '2'),
-                _RitualLine(label: 'Thinking drills', value: '3'),
-                _RitualLine(label: 'Articulation prompt', value: '1'),
-              ],
+    return const _CenteredStep(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _SectionLabel(text: 'YOUR DAILY PRACTICE'),
+          SizedBox(height: 14),
+          _HeroTitle(text: 'Your Daily Ritual', textAlign: TextAlign.center),
+          SizedBox(height: 36),
+          _RitualCard(),
+          SizedBox(height: 30),
+          Text(
+            '2 briefings to stay current.\n\n'
+            '3 judgment exercises to sharpen thinking.\n\n'
+            '1 articulation prompt to express ideas clearly.',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: SivraColors.mutedText,
+              fontSize: 15,
+              height: 1.4,
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
@@ -432,47 +489,43 @@ class _RoleStep extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
-
     return ListView(
+      padding: const EdgeInsets.only(top: 24, bottom: 12),
       children: [
-        const _StepTitle(
-          title: 'What do you think for a living?',
-          body:
-              'Choose what matters most. Sivra shapes your Daily Pack around how you think.',
+        const _HeroTitle(
+          text: 'WHERE DO YOU WANT TO BECOME SHARPER?',
+          textAlign: TextAlign.center,
+          fontSize: 30,
         ),
-        const SizedBox(height: 18),
-        ...options.map((option) {
-          final isSelected = selected.contains(option);
-          final disabled = !isSelected && selected.length >= 3;
-
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 8),
-            child: Opacity(
-              opacity: disabled ? 0.5 : 1,
-              child: _ChoiceTile(
-                title: option,
-                selected: isSelected,
-                trailing: Checkbox(
-                  value: isSelected,
-                  onChanged: disabled
-                      ? null
-                      : (value) => onChanged(option, value ?? false),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                ),
-                onTap: disabled ? null : () => onChanged(option, !isSelected),
-              ),
-            ),
-          );
-        }),
-        const SizedBox(height: 6),
-        Text(
-          'Choose up to 3.',
-          style: Theme.of(context).textTheme.labelLarge?.copyWith(
-            color: colors.onSurface.withValues(alpha: 0.58),
+        const SizedBox(height: 16),
+        const Text(
+          'Choose up to three areas.\n'
+          'Your selections shape tomorrow\'s ritual.',
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            color: SivraColors.mutedText,
+            fontSize: 17,
+            height: 1.45,
           ),
+        ),
+        const SizedBox(height: 44),
+        Wrap(
+          alignment: WrapAlignment.center,
+          spacing: 12,
+          runSpacing: 12,
+          children: options.map((option) {
+            final isSelected = selected.contains(option);
+            final disabled = !isSelected && selected.length >= 3;
+
+            return _IdentityChip(
+              label: option == 'Product / Strategy'
+                  ? 'Product Strategy'
+                  : option,
+              selected: isSelected,
+              disabled: disabled,
+              onTap: () => onChanged(option, !isSelected),
+            );
+          }).toList(),
         ),
       ],
     );
@@ -484,87 +537,27 @@ class _IdentityStep extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Stack(
-      children: [
-        Positioned.fill(child: _DailyPackAtmosphere()),
-        _CopyStep(
-          title: 'From informed → sharp.',
-          body:
-              'Six months from now, you won’t just know more.\n\nYou’ll walk into meetings with a point of view, explain complexity simply, and think with greater precision under pressure.',
-        ),
-      ],
-    );
-  }
-}
-
-class _CopyStep extends StatelessWidget {
-  final String title;
-  final String body;
-
-  const _CopyStep({required this.title, required this.body});
-
-  @override
-  Widget build(BuildContext context) {
-    return ListView(
-      children: [
-        SizedBox(height: MediaQuery.sizeOf(context).height * 0.08),
-        _StepTitle(title: title, body: body),
-      ],
-    );
-  }
-}
-
-class _StepTitle extends StatelessWidget {
-  final String title;
-  final String body;
-
-  const _StepTitle({required this.title, required this.body});
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(title, style: textTheme.headlineMedium),
-        const SizedBox(height: 14),
-        Text(
-          body,
-          style: textTheme.bodyLarge?.copyWith(
-            color: colors.onSurface.withValues(alpha: 0.76),
-            height: 1.42,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _RitualLine extends StatelessWidget {
-  final String label;
-  final String value;
-
-  const _RitualLine({required this.label, required this.value});
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 7),
-      child: Row(
+    return const _CenteredStep(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Text(
-            value,
-            style: Theme.of(
-              context,
-            ).textTheme.headlineSmall?.copyWith(color: colors.primary),
+          _SectionLabel(text: 'SIX MONTHS FROM NOW'),
+          SizedBox(height: 18),
+          _HeroTitle(
+            text: 'FROM INFORMED → SHARP',
+            textAlign: TextAlign.center,
           ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Text(label, style: Theme.of(context).textTheme.titleMedium),
+          SizedBox(height: 44),
+          _FutureStatement(
+            text: 'Six months from now, you won\'t just know more.',
+          ),
+          _FutureStatement(
+            text: 'You\'ll walk into meetings with a point of view.',
+          ),
+          _FutureStatement(text: 'Explain complexity clearly.'),
+          _FutureStatement(
+            text: 'And make better decisions under pressure.',
+            emphasized: true,
           ),
         ],
       ),
@@ -572,58 +565,428 @@ class _RitualLine extends StatelessWidget {
   }
 }
 
-class _DailyPackAtmosphere extends StatelessWidget {
-  const _DailyPackAtmosphere();
+class _ChamberBackground extends StatelessWidget {
+  final Widget child;
+
+  const _ChamberBackground({required this.child});
 
   @override
   Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
-
-    return IgnorePointer(
-      child: Opacity(
-        opacity: 0.16,
-        child: ImageFiltered(
-          imageFilter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-          child: Transform.translate(
-            offset: const Offset(22, 80),
-            child: DecoratedBox(
+    return DecoratedBox(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [Color(0xFF07101D), Color(0xFF0A1729), Color(0xFF07111F)],
+          stops: [0, 0.52, 1],
+        ),
+      ),
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          Positioned(
+            top: -180,
+            left: -80,
+            right: -80,
+            child: Container(
+              height: 390,
               decoration: BoxDecoration(
-                border: Border.all(
-                  color: colors.primary.withValues(alpha: 0.28),
-                ),
-                borderRadius: BorderRadius.circular(8),
-                color: colors.surface.withValues(alpha: 0.44),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(18),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      height: 18,
-                      width: 160,
-                      decoration: BoxDecoration(
-                        color: colors.onSurface,
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                    ),
-                    const SizedBox(height: 18),
-                    Container(
-                      height: 86,
-                      decoration: BoxDecoration(
-                        border: Border.all(color: colors.primary),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Container(
-                      height: 86,
-                      decoration: BoxDecoration(
-                        border: Border.all(color: colors.onSurface),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
+                shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  colors: [
+                    SivraColors.bronze.withValues(alpha: 0.11),
+                    SivraColors.bronze.withValues(alpha: 0),
                   ],
+                ),
+              ),
+            ),
+          ),
+          child,
+        ],
+      ),
+    );
+  }
+}
+
+class _OnboardingHeader extends StatelessWidget {
+  final bool canGoBack;
+  final VoidCallback onBack;
+
+  const _OnboardingHeader({required this.canGoBack, required this.onBack});
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 54,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          Align(
+            alignment: Alignment.centerLeft,
+            child: canGoBack
+                ? IconButton(
+                    tooltip: 'Back',
+                    onPressed: onBack,
+                    icon: const Icon(Icons.arrow_back_rounded),
+                    color: SivraColors.warmIvory,
+                  )
+                : const SizedBox(width: 48, height: 48),
+          ),
+          const Text(
+            'Sivra',
+            semanticsLabel: 'Sivra',
+            style: TextStyle(
+              color: SivraColors.mutedText,
+              fontSize: 17,
+              fontWeight: FontWeight.w400,
+              letterSpacing: 1.2,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CenteredStep extends StatelessWidget {
+  final Widget child;
+
+  const _CenteredStep({required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(vertical: 20),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: constraints.maxHeight - 40),
+            child: Center(child: child),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _HeroTitle extends StatelessWidget {
+  final String text;
+  final TextAlign textAlign;
+  final double fontSize;
+
+  const _HeroTitle({
+    required this.text,
+    required this.textAlign,
+    this.fontSize = 40,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      text,
+      textAlign: textAlign,
+      style: TextStyle(
+        color: SivraColors.warmIvory,
+        fontSize: fontSize,
+        height: 1.08,
+        fontWeight: FontWeight.w700,
+        letterSpacing: -1.1,
+        shadows: [
+          Shadow(
+            color: SivraColors.bronze.withValues(alpha: 0.18),
+            blurRadius: 28,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SigilGlow extends StatelessWidget {
+  const _SigilGlow();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 92,
+      height: 92,
+      padding: const EdgeInsets.all(22),
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: SivraColors.surface.withValues(alpha: 0.42),
+        boxShadow: [
+          BoxShadow(
+            color: SivraColors.bronze.withValues(alpha: 0.2),
+            blurRadius: 45,
+            spreadRadius: 6,
+          ),
+        ],
+      ),
+      child: Image.asset(
+        'assets/brand/sivra-sigil.png',
+        color: SivraColors.bronze,
+        colorBlendMode: BlendMode.srcIn,
+      ),
+    );
+  }
+}
+
+class _RitualSummary extends StatelessWidget {
+  const _RitualSummary();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        _SummaryItem(value: '2', label: 'Briefings'),
+        _SummaryDivider(),
+        _SummaryItem(value: '4', label: 'Exercises'),
+        _SummaryDivider(),
+        _SummaryItem(value: '7', label: 'Minutes'),
+      ],
+    );
+  }
+}
+
+class _SummaryItem extends StatelessWidget {
+  final String value;
+  final String label;
+
+  const _SummaryItem({required this.value, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Text(
+          value,
+          style: const TextStyle(
+            color: SivraColors.bronze,
+            fontSize: 23,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        const SizedBox(height: 3),
+        Text(
+          label,
+          style: const TextStyle(
+            color: SivraColors.mutedText,
+            fontSize: 13,
+            letterSpacing: 0.2,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _SummaryDivider extends StatelessWidget {
+  const _SummaryDivider();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 1,
+      height: 34,
+      margin: const EdgeInsets.symmetric(horizontal: 22),
+      color: SivraColors.warmIvory.withValues(alpha: 0.12),
+    );
+  }
+}
+
+class _SectionLabel extends StatelessWidget {
+  final String text;
+
+  const _SectionLabel({required this.text});
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      text,
+      style: const TextStyle(
+        color: SivraColors.bronze,
+        fontSize: 11,
+        fontWeight: FontWeight.w700,
+        letterSpacing: 2.1,
+      ),
+    );
+  }
+}
+
+class _RitualCard extends StatelessWidget {
+  const _RitualCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      constraints: const BoxConstraints(maxWidth: 390),
+      padding: const EdgeInsets.fromLTRB(26, 26, 26, 28),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(30),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            SivraColors.surfaceSoft.withValues(alpha: 0.95),
+            SivraColors.surface.withValues(alpha: 0.78),
+          ],
+        ),
+        border: Border.all(color: SivraColors.bronze.withValues(alpha: 0.22)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.35),
+            blurRadius: 36,
+            offset: const Offset(0, 20),
+          ),
+          BoxShadow(
+            color: SivraColors.bronze.withValues(alpha: 0.09),
+            blurRadius: 40,
+            spreadRadius: 2,
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const _SectionLabel(text: 'TODAY’S INVESTMENT'),
+          const SizedBox(height: 12),
+          const Text(
+            '7 minutes.',
+            style: TextStyle(
+              color: SivraColors.warmIvory,
+              fontSize: 27,
+              fontWeight: FontWeight.w600,
+              letterSpacing: -0.4,
+            ),
+          ),
+          const SizedBox(height: 34),
+          Container(
+            height: 1,
+            color: SivraColors.warmIvory.withValues(alpha: 0.1),
+          ),
+          const SizedBox(height: 24),
+          const Row(
+            children: [
+              Expanded(
+                child: _CardMetric(value: '2', label: 'Briefings'),
+              ),
+              Expanded(
+                child: _CardMetric(value: '3', label: 'Decisions'),
+              ),
+              Expanded(
+                child: _CardMetric(value: '1', label: 'Articulation'),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CardMetric extends StatelessWidget {
+  final String value;
+  final String label;
+
+  const _CardMetric({required this.value, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Text(
+          value,
+          style: const TextStyle(
+            color: SivraColors.bronze,
+            fontSize: 28,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        const SizedBox(height: 3),
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+            label,
+            maxLines: 1,
+            style: const TextStyle(color: SivraColors.mutedText, fontSize: 13),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _IdentityChip extends StatelessWidget {
+  final String label;
+  final bool selected;
+  final bool disabled;
+  final VoidCallback onTap;
+
+  const _IdentityChip({
+    required this.label,
+    required this.selected,
+    required this.disabled,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      selected: selected,
+      button: true,
+      child: AnimatedOpacity(
+        duration: const Duration(milliseconds: 180),
+        opacity: disabled ? 0.42 : 1,
+        child: AnimatedScale(
+          duration: const Duration(milliseconds: 180),
+          curve: Curves.easeOutBack,
+          scale: selected ? 1.025 : 1,
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              key: ValueKey(
+                selected ? 'role-chip-selected-$label' : 'role-chip-$label',
+              ),
+              onTap: disabled ? null : onTap,
+              borderRadius: BorderRadius.circular(24),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 220),
+                curve: Curves.easeOutCubic,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 21,
+                  vertical: 15,
+                ),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(24),
+                  color: selected
+                      ? SivraColors.bronze.withValues(alpha: 0.92)
+                      : SivraColors.surfaceSoft.withValues(alpha: 0.68),
+                  border: Border.all(
+                    color: selected
+                        ? SivraColors.bronze
+                        : SivraColors.warmIvory.withValues(alpha: 0.1),
+                  ),
+                  boxShadow: selected
+                      ? [
+                          BoxShadow(
+                            color: SivraColors.bronze.withValues(alpha: 0.22),
+                            blurRadius: 18,
+                            offset: const Offset(0, 8),
+                          ),
+                        ]
+                      : null,
+                ),
+                child: Text(
+                  label,
+                  style: TextStyle(
+                    color: selected
+                        ? SivraColors.deepInk
+                        : SivraColors.warmIvory,
+                    fontSize: 15,
+                    fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                  ),
                 ),
               ),
             ),
@@ -634,35 +997,26 @@ class _DailyPackAtmosphere extends StatelessWidget {
   }
 }
 
-class _ChoiceTile extends StatelessWidget {
-  final String title;
-  final bool selected;
-  final Widget trailing;
-  final VoidCallback? onTap;
+class _FutureStatement extends StatelessWidget {
+  final String text;
+  final bool emphasized;
 
-  const _ChoiceTile({
-    required this.title,
-    required this.selected,
-    required this.trailing,
-    required this.onTap,
-  });
+  const _FutureStatement({required this.text, this.emphasized = false});
 
   @override
   Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
-
-    return ListTile(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(8),
-        side: BorderSide(
-          color: selected
-              ? colors.primary
-              : Theme.of(context).dividerColor.withValues(alpha: 0.35),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 19),
+      child: Text(
+        text,
+        textAlign: TextAlign.center,
+        style: TextStyle(
+          color: emphasized ? SivraColors.bronze : SivraColors.warmIvory,
+          fontSize: emphasized ? 22 : 20,
+          height: 1.35,
+          fontWeight: emphasized ? FontWeight.w700 : FontWeight.w400,
         ),
       ),
-      title: Text(title),
-      trailing: trailing,
-      onTap: onTap,
     );
   }
 }

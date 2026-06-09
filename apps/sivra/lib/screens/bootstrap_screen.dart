@@ -5,7 +5,7 @@ import '../services/auth_service.dart';
 import '../services/entitlement_service.dart';
 import '../services/firestore_service.dart';
 import 'onboarding_screen.dart';
-import 'today_screen.dart';
+import 'app_shell.dart';
 
 class BootstrapScreen extends StatefulWidget {
   const BootstrapScreen({super.key});
@@ -33,7 +33,7 @@ class _BootstrapScreenState extends State<BootstrapScreen> {
     try {
       await EntitlementService.instance.configure(appUserId: user.uid);
     } catch (_) {
-      // Purchase status should not block the core learning flow.
+      // Purchase status should not block the core ritual flow.
     }
 
     var profileUnavailable = false;
@@ -78,7 +78,7 @@ class _BootstrapScreenState extends State<BootstrapScreen> {
         }
 
         if (state.hasProfile) {
-          return const TodayScreen();
+          return const AppShell();
         }
 
         return OnboardingScreen(
@@ -96,7 +96,7 @@ class _BootstrapScreenState extends State<BootstrapScreen> {
               ? (focusAreas) {
                   Navigator.of(context).pushReplacement(
                     MaterialPageRoute(
-                      builder: (context) => TodayScreen(
+                      builder: (context) => AppShell(
                         initialFocusAreas: focusAreas,
                         loadRemote: false,
                       ),

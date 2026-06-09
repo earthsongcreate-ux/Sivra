@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 
 import '../data/mock_daily_pack.dart';
+import '../design/sivra_colors.dart';
 import '../models/daily_pack.dart';
 import '../models/drill_item.dart';
 import '../utils/day_id.dart';
 import 'drill_flow_screen.dart';
 import 'learning_memory_screen.dart';
 import 'onboarding_screen.dart';
+import 'paywall_screen.dart';
 import 'source_sheet.dart';
 import 'today_screen.dart';
 
@@ -37,11 +39,31 @@ class ScreenshotPreviewScreen extends StatelessWidget {
         initialArticulationAnswer:
             'AI reduces avoidable work by giving teams clearer starting points, faster review cycles, and stronger checks before launch.\n\nThe value is not replacing judgment.\n\nThe value is helping good judgment move faster with less confusion.',
       ),
+      'drill-navigation' => DrillFlowScreen(
+        items: pack.items,
+        dayId: pack.dayId,
+        initialIndex: 4,
+      ),
       'source-context' => _SourceContextPreview(
         item: pack.items.firstWhere((item) => item.hasSource),
       ),
       'learning-memory' => LearningMemoryScreen(pack: pack),
-      'paywall' => const _PaywallPreview(),
+      'paywall' => const PaywallScreen(
+        previewPlans: <PaywallPlan>[
+          PaywallPlan(
+            id: 'annual',
+            price: r'$99.99/year',
+            recommended: true,
+            hasTrial: true,
+          ),
+          PaywallPlan(
+            id: 'monthly',
+            price: r'$12.99/month',
+            recommended: false,
+            hasTrial: false,
+          ),
+        ],
+      ),
       _ => _UnknownScreenshotScreen(screen: screen),
     };
   }
@@ -77,7 +99,7 @@ class _SourceContextPreview extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Daily Pack')),
+      appBar: AppBar(title: const Text('Today’s Ritual')),
       body: SafeArea(
         child: Column(
           children: [
@@ -87,7 +109,10 @@ class _SourceContextPreview extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    ActionChip(label: const Text('Source'), onPressed: () {}),
+                    ActionChip(
+                      label: const Text('Source Context'),
+                      onPressed: () {},
+                    ),
                     const SizedBox(height: 12),
                     Text(
                       item.prompt,
@@ -95,8 +120,12 @@ class _SourceContextPreview extends StatelessWidget {
                     ),
                     const SizedBox(height: 16),
                     Text(
-                      'Answer',
-                      style: Theme.of(context).textTheme.titleMedium,
+                      'ANSWER',
+                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                        color: SivraColors.bronze,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 1.2,
+                      ),
                     ),
                     const SizedBox(height: 8),
                     Text(item.answer ?? ''),
@@ -116,134 +145,6 @@ class _SourceContextPreview extends StatelessWidget {
                 ),
               ),
               child: SourceSheet(source: item.source!),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _PaywallPreview extends StatelessWidget {
-  const _PaywallPreview();
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-
-    return Scaffold(
-      appBar: AppBar(title: const Text('Sivra Pro')),
-      body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
-          children: [
-            Text('Unlock AI Pack Generation', style: textTheme.headlineSmall),
-            const SizedBox(height: 10),
-            Text(
-              'Sivra Pro creates fresh daily packs from your focus areas, learning memory, and trusted source rules.',
-              style: textTheme.bodyMedium?.copyWith(
-                color: colors.onSurface.withValues(alpha: 0.74),
-              ),
-            ),
-            const SizedBox(height: 22),
-            const _PreviewBenefit(
-              icon: Icons.auto_awesome_outlined,
-              label: 'Personalized AI-generated daily packs',
-            ),
-            const _PreviewBenefit(
-              icon: Icons.verified_outlined,
-              label: 'Source trust and content QA checks',
-            ),
-            const _PreviewBenefit(
-              icon: Icons.insights_outlined,
-              label: 'Learning memory that adapts over time',
-            ),
-            const SizedBox(height: 22),
-            const _PreviewPlanTile(
-              title: 'RevenueCat hosted paywall',
-              detail:
-                  'Pricing, trials, packages, and button copy are managed from the RevenueCat dashboard.',
-              buttonLabel: 'Open hosted paywall',
-            ),
-            const SizedBox(height: 16),
-            TextButton(
-              onPressed: () {},
-              child: const Text('Restore purchases'),
-            ),
-            TextButton(onPressed: () {}, child: const Text('Continue free')),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _PreviewBenefit extends StatelessWidget {
-  final IconData icon;
-  final String label;
-
-  const _PreviewBenefit({required this.icon, required this.label});
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: Row(
-        children: [
-          Icon(icon, size: 20, color: colors.primary),
-          const SizedBox(width: 10),
-          Expanded(child: Text(label)),
-        ],
-      ),
-    );
-  }
-}
-
-class _PreviewPlanTile extends StatelessWidget {
-  final String title;
-  final String detail;
-  final String buttonLabel;
-
-  const _PreviewPlanTile({
-    required this.title,
-    required this.detail,
-    required this.buttonLabel,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        border: Border.all(color: colors.primary.withValues(alpha: 0.48)),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Expanded(child: Text(title, style: textTheme.titleMedium)),
-              ],
-            ),
-            const SizedBox(height: 6),
-            Text(
-              detail,
-              style: textTheme.bodyMedium?.copyWith(
-                color: colors.onSurface.withValues(alpha: 0.72),
-              ),
-            ),
-            const SizedBox(height: 12),
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton(onPressed: () {}, child: Text(buttonLabel)),
             ),
           ],
         ),

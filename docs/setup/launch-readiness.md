@@ -9,7 +9,7 @@ Use explicit build flags for every shared build:
 ```sh
 flutter build ios \
   --dart-define=SIVRA_BUILD_CHANNEL=testflight \
-  --dart-define=SIVRA_REVENUECAT_IOS_KEY=appl_your_public_sdk_key \
+  --dart-define=SIVRA_REVENUECAT_IOS_KEY=<RevenueCat public iOS SDK key> \
   --dart-define=SIVRA_PRO_ENTITLEMENT=sivra_pro \
   --dart-define=SIVRA_MONTHLY_PRODUCT_ID=sivra_monthly_1299 \
   --dart-define=SIVRA_ANNUAL_PRODUCT_ID=sivra_annual_9999 \

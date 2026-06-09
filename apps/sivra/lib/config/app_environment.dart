@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 class AppEnvironment {
   static const aiPackEndpoint = String.fromEnvironment(
     'SIVRA_AI_PACK_ENDPOINT',
@@ -9,6 +11,10 @@ class AppEnvironment {
   static const diagnosticsEnabled = bool.fromEnvironment(
     'SIVRA_DIAGNOSTICS',
     defaultValue: true,
+  );
+  static const _developerToolsOverride = bool.fromEnvironment(
+    'SIVRA_DEVELOPER_TOOLS',
+    defaultValue: false,
   );
   static const revenueCatIosApiKey = String.fromEnvironment(
     'SIVRA_REVENUECAT_IOS_KEY',
@@ -30,6 +36,8 @@ class AppEnvironment {
   );
 
   static bool get aiGenerationConfigured => aiPackEndpoint.trim().isNotEmpty;
+  static bool get developerToolsEnabled =>
+      kDebugMode || _developerToolsOverride;
   static bool get revenueCatConfigured =>
       revenueCatIosApiKey.trim().isNotEmpty ||
       revenueCatAndroidApiKey.trim().isNotEmpty;
