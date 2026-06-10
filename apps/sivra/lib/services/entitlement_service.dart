@@ -118,7 +118,9 @@ class EntitlementService {
         '[RevenueCat] Purchasing package ${package.identifier} '
         '(${package.storeProduct.identifier}).',
       );
-      final result = await Purchases.purchase(PurchaseParams.package(package));
+      // RevenueCat still supports purchasePackage() for custom paywalls.
+      // ignore: deprecated_member_use
+      final result = await Purchases.purchasePackage(package);
       return _stateFromCustomerInfo(result.customerInfo);
     } on PlatformException catch (error, stackTrace) {
       debugPrint(

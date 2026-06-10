@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
@@ -34,6 +36,7 @@ class PaywallPlan {
   final String price;
   final bool recommended;
   final bool hasTrial;
+  final String? trialLabel;
   final Package? package;
 
   const PaywallPlan({
@@ -41,6 +44,7 @@ class PaywallPlan {
     required this.price,
     required this.recommended,
     required this.hasTrial,
+    this.trialLabel,
     this.package,
   });
 
@@ -51,11 +55,15 @@ class _PaywallScreenState extends State<PaywallScreen> {
   late Future<List<PaywallPlan>> _plans;
   String? _processingPlanId;
   bool _restoring = false;
+  bool _paywallImpressionTracked = false;
 
   @override
   void initState() {
     super.initState();
     _plans = _loadPlans();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      unawaited(_trackPaywallImpression());
+    });
   }
 
   Future<List<PaywallPlan>> _loadPlans() async {
@@ -64,49 +72,112 @@ class _PaywallScreenState extends State<PaywallScreen> {
       return previewPlans;
     }
 
+    final packages = await EntitlementService.instance.availablePackages();
+    final annual = _findPackage(packages, annual: true);
+    final monthly = _findPackage(packages, annual: false);
+
+    if (annual == null || monthly == null) {
+      if (!AppEnvironment.revenueCatConfigured) {
+        return const <PaywallPlan>[
+          PaywallPlan(
+            id: 'annual',
+            price: r'$99.99/year',
+            recommended: true,
+            hasTrial: true,
+          ),
+          PaywallPlan(
+            id: 'monthly',
+            price: r'$12.99/month',
+            recommended: false,
+            hasTrial: false,
+          ),
+        ];
+      }
+
+      throw StateError('RevenueCat offerings did not include annual/monthly.');
+    }
+
+    return <PaywallPlan>[
+      PaywallPlan(
+        id: 'annual',
+        price: annual.storeProduct.priceString,
+        recommended: true,
+        hasTrial: _hasTrialOffer(annual.storeProduct),
+        trialLabel: _trialLabelForProduct(annual.storeProduct),
+        package: annual,
+      ),
+      PaywallPlan(
+        id: 'monthly',
+        price: monthly.storeProduct.priceString,
+        recommended: false,
+        hasTrial: false,
+        package: monthly,
+      ),
+    ];
+  }
+
+  bool _hasTrialOffer(StoreProduct product) {
+    if (product.introductoryPrice != null) {
+      return true;
+    }
+
+    final defaultOption = product.defaultOption;
+    if (defaultOption == null) {
+      return false;
+    }
+
+    return defaultOption.pricingPhases.any(
+      (phase) => phase.offerPaymentMode == OfferPaymentMode.freeTrial,
+    );
+  }
+
+  String? _trialLabelForProduct(StoreProduct product) {
+    final introductoryPrice = product.introductoryPrice;
+    if (introductoryPrice != null) {
+      return '${_periodLabel(introductoryPrice.periodNumberOfUnits, introductoryPrice.periodUnit)} Free Trial';
+    }
+
+    final freePhase = product.defaultOption?.freePhase;
+    final period = freePhase?.billingPeriod;
+    if (period == null) {
+      return null;
+    }
+
+    return '${_periodLabel(period.value, period.unit)} Free Trial';
+  }
+
+  String _periodLabel(int units, PeriodUnit unit) {
+    final amount = units == 1 ? '1' : '$units';
+    final periodName = switch (unit) {
+      PeriodUnit.day => units == 1 ? 'Day' : 'Days',
+      PeriodUnit.week => units == 1 ? 'Week' : 'Weeks',
+      PeriodUnit.month => units == 1 ? 'Month' : 'Months',
+      PeriodUnit.year => units == 1 ? 'Year' : 'Years',
+      _ => 'Period',
+    };
+    return '$amount-$periodName';
+  }
+
+  Future<void> _trackPaywallImpression() async {
+    if (_paywallImpressionTracked ||
+        !mounted ||
+        widget.previewPlans != null ||
+        !EntitlementService.instance.isConfigured) {
+      return;
+    }
+
+    _paywallImpressionTracked = true;
     try {
-      final packages = await EntitlementService.instance.availablePackages();
-      final annual = _findPackage(packages, annual: true);
-      final monthly = _findPackage(packages, annual: false);
-      return <PaywallPlan>[
-        PaywallPlan(
-          id: 'annual',
-          price: _priceWithPeriod(
-            annual?.storeProduct.priceString,
-            fallback: r'$99.99/year',
-            period: 'year',
-          ),
-          recommended: true,
-          hasTrial: true,
-          package: annual,
+      await Purchases.trackCustomPaywallImpression(
+        params: const CustomPaywallImpressionParams(
+          paywallId: 'sivra-custom-paywall',
         ),
-        PaywallPlan(
-          id: 'monthly',
-          price: _priceWithPeriod(
-            monthly?.storeProduct.priceString,
-            fallback: r'$12.99/month',
-            period: 'month',
-          ),
-          recommended: false,
-          hasTrial: false,
-          package: monthly,
-        ),
-      ];
-    } catch (_) {
-      return const <PaywallPlan>[
-        PaywallPlan(
-          id: 'annual',
-          price: r'$99.99/year',
-          recommended: true,
-          hasTrial: true,
-        ),
-        PaywallPlan(
-          id: 'monthly',
-          price: r'$12.99/month',
-          recommended: false,
-          hasTrial: false,
-        ),
-      ];
+      );
+    } catch (error, stackTrace) {
+      debugPrint(
+        '[RevenueCat] Paywall impression tracking failed: '
+        '$error\n$stackTrace',
+      );
     }
   }
 
@@ -125,18 +196,6 @@ class _PaywallScreenState extends State<PaywallScreen> {
       }
     }
     return null;
-  }
-
-  String _priceWithPeriod(
-    String? price, {
-    required String fallback,
-    required String period,
-  }) {
-    final value = price?.trim();
-    if (value == null || value.isEmpty) {
-      return fallback;
-    }
-    return value.contains('/') ? value : '$value/$period';
   }
 
   Future<void> _purchase(PaywallPlan plan) async {
@@ -339,9 +398,9 @@ class _PaywallContent extends StatelessWidget {
               detail: 'Shaped by your focus areas.',
             ),
             _BenefitData(
-              icon: Icons.auto_stories_outlined,
-              title: 'Thinking Archive',
-              detail: 'Keep your best ideas and insights.',
+              icon: Icons.radar_outlined,
+              title: 'Fresh Source Context',
+              detail: 'Stay current with selected signals.',
             ),
             _BenefitData(
               icon: Icons.calendar_view_week_outlined,
@@ -349,9 +408,9 @@ class _PaywallContent extends StatelessWidget {
               detail: 'Reflect on patterns over time.',
             ),
             _BenefitData(
-              icon: Icons.radar_outlined,
-              title: 'Fresh Source Context',
-              detail: 'Stay current with selected signals.',
+              icon: Icons.auto_stories_outlined,
+              title: 'Thinking Archive',
+              detail: 'Keep your best ideas and insights.',
             ),
           ],
         ),
@@ -499,7 +558,7 @@ class _PaywallHero extends StatelessWidget {
               fontWeight: FontWeight.w600,
               letterSpacing: -0.5,
               height: 1.1,
-              fontSize: compact ? 20 : 23,
+              fontSize: compact ? 21 : 24,
             ),
           ),
           SizedBox(height: compact ? 5 : 6),
@@ -577,7 +636,7 @@ class _Benefit extends StatelessWidget {
         compact ? 7 : 9,
         compact ? 7 : 9,
         compact ? 7 : 9,
-        compact ? 7 : 8,
+        compact ? 5 : 6,
       ),
       decoration: BoxDecoration(
         color: SivraColors.surface.withValues(alpha: 0.5),
@@ -800,19 +859,16 @@ class _PlanCard extends StatelessWidget {
                   SizedBox(height: compact ? 14 : 16),
                 const Spacer(),
                 Text(
-                  plan.hasTrial ? '7-Day Free Trial' : 'Monthly',
+                  plan.trialLabel ??
+                      (plan.hasTrial ? '7-Day Free Trial' : 'Monthly'),
                   maxLines: 1,
-                  style:
-                      (plan.hasTrial
-                              ? Theme.of(context).textTheme.titleMedium
-                              : Theme.of(context).textTheme.titleMedium)
-                          ?.copyWith(
-                            color: plan.hasTrial
-                                ? SivraColors.bronze
-                                : SivraColors.warmIvory,
-                            fontWeight: FontWeight.w700,
-                            fontSize: compact ? 14 : null,
-                          ),
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    color: plan.hasTrial
+                        ? SivraColors.bronze
+                        : SivraColors.warmIvory,
+                    fontWeight: FontWeight.w700,
+                    fontSize: compact ? 14 : null,
+                  ),
                 ),
                 if (!plan.hasTrial) ...[
                   const SizedBox(height: 1),

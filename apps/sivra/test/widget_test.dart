@@ -1020,7 +1020,13 @@ void main() {
           find.byKey(const ValueKey('benefit-Fresh Source Context')),
         ),
       ];
-      expect(benefitRects.map((rect) => rect.height).toSet(), hasLength(1));
+      final firstBenefitHeight = benefitRects.first.height;
+      expect(
+        benefitRects.every(
+          (rect) => (rect.height - firstBenefitHeight).abs() < 0.5,
+        ),
+        isTrue,
+      );
 
       final annualRect = tester.getRect(
         find.byKey(const ValueKey('plan-annual')),

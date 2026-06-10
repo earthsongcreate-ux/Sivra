@@ -32,6 +32,7 @@ class _BootstrapScreenState extends State<BootstrapScreen> {
 
     try {
       await EntitlementService.instance.configure(appUserId: user.uid);
+      await EntitlementService.instance.currentState();
     } catch (_) {
       // Purchase status should not block the core ritual flow.
     }
