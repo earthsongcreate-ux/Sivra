@@ -168,8 +168,9 @@ void main() {
       findsOneWidget,
     );
     expect(find.text('2'), findsOneWidget);
-    expect(find.text('4'), findsOneWidget);
+    expect(find.text('3'), findsOneWidget);
     expect(find.text('7'), findsOneWidget);
+    expect(find.text('Decisions'), findsOneWidget);
     expect(find.text('Continue'), findsOneWidget);
   });
 
@@ -190,7 +191,10 @@ void main() {
 
     expect(find.text('Your Daily Ritual'), findsOneWidget);
     expect(find.text('7 minutes.'), findsOneWidget);
-    expect(find.textContaining('3 judgment exercises'), findsOneWidget);
+    expect(
+      find.textContaining('3 decisions to sharpen judgment'),
+      findsOneWidget,
+    );
     await tester.tap(find.text('Continue'));
     await tester.pumpAndSettle();
 
@@ -198,7 +202,7 @@ void main() {
     expect(
       find.text(
         'Choose up to three areas.\n'
-        'Your selections shape tomorrow\'s ritual.',
+        'Your selections shape your daily ritual.',
       ),
       findsOneWidget,
     );
@@ -216,15 +220,63 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('FROM INFORMED → SHARP'), findsOneWidget);
+    expect(find.text('365 DAYS. 365 OPPORTUNITIES.'), findsOneWidget);
     expect(
-      find.text('And make better decisions under pressure.'),
+      find.text('The archive becomes your personal thinking system.'),
       findsOneWidget,
     );
+    expect(find.text('Make better decisions under pressure.'), findsOneWidget);
     expect(find.text('Begin My Ritual'), findsOneWidget);
 
     await tester.tap(find.byTooltip('Back'));
     await tester.pumpAndSettle();
     expect(find.text('WHERE DO YOU WANT TO BECOME SHARPER?'), findsOneWidget);
+  });
+
+  testWidgets('onboarding fits the target iPhone viewports', (
+    WidgetTester tester,
+  ) async {
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    tester.view.devicePixelRatio = 1;
+
+    for (final size in const <Size>[
+      Size(320, 568),
+      Size(390, 844),
+      Size(402, 874),
+    ]) {
+      tester.view.physicalSize = size;
+
+      for (var step = 0; step < 4; step++) {
+        await tester.pumpWidget(
+          MaterialApp(
+            theme: SivraTheme.light(),
+            darkTheme: SivraTheme.dark(),
+            themeMode: ThemeMode.dark,
+            home: OnboardingScreen(
+              uid: 'test',
+              initialStepIndex: step,
+              initialSelectedFocus: step == 2
+                  ? const <String>['Founder']
+                  : const <String>[],
+              onCompleted: _noop,
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        final cta = tester.getRect(
+          find.text(step == 3 ? 'Begin My Ritual' : 'Continue'),
+        );
+        expect(cta.bottom, lessThanOrEqualTo(size.height));
+        expect(
+          tester.takeException(),
+          isNull,
+          reason: 'Step $step overflowed at ${size.width}x${size.height}.',
+        );
+        await tester.pumpWidget(const SizedBox.shrink());
+      }
+    }
   });
 
   testWidgets('onboarding limits personalization to three roles', (
@@ -309,17 +361,9 @@ void main() {
       await tester.tap(find.text('Begin My Ritual'));
       await tester.pumpAndSettle();
 
-      expect(
-        find.text('Continue Building Your Thinking System'),
-        findsOneWidget,
-      );
+      expect(find.textContaining('Continue Building Your'), findsOneWidget);
       expect(completed, isFalse);
 
-      await tester.scrollUntilVisible(
-        find.text('Continue Free'),
-        400,
-        scrollable: find.byType(Scrollable).last,
-      );
       await tester.tap(find.text('Continue Free'));
       await tester.pumpAndSettle();
 
@@ -383,11 +427,6 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.text('Begin My Ritual'));
       await tester.pumpAndSettle();
-      await tester.scrollUntilVisible(
-        find.byKey(const ValueKey('purchase-annual')),
-        400,
-        scrollable: find.byType(Scrollable).last,
-      );
       await tester.tap(find.byKey(const ValueKey('purchase-annual')));
       await tester.pumpAndSettle();
 
@@ -443,11 +482,6 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.text('Begin My Ritual'));
       await tester.pumpAndSettle();
-      await tester.scrollUntilVisible(
-        find.text('Continue Free'),
-        400,
-        scrollable: find.byType(Scrollable).last,
-      );
       await tester.tap(find.text('Continue Free'));
       await tester.pumpAndSettle();
 
@@ -734,18 +768,13 @@ void main() {
     await tester.tap(find.text('Sivra Pro'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Continue Building Your Thinking System'), findsOneWidget);
+    expect(find.textContaining('Continue Building Your'), findsOneWidget);
     expect(find.text('Personalized Daily Rituals'), findsOneWidget);
     expect(find.text('Thinking Archive'), findsOneWidget);
     expect(find.text('Weekly Recaps'), findsOneWidget);
     expect(find.text('Fresh Source Context'), findsOneWidget);
     expect(find.text('RevenueCat hosted paywall'), findsNothing);
 
-    await tester.scrollUntilVisible(
-      find.text('Continue Free'),
-      400,
-      scrollable: find.byType(Scrollable).last,
-    );
     await tester.tap(find.text('Continue Free'));
     await tester.pumpAndSettle();
     expect(find.text('TODAY’S RITUAL'), findsOneWidget);
@@ -972,7 +1001,11 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.byType(SingleChildScrollView), findsOneWidget);
+      if (size.height <= 900) {
+        expect(find.byType(SingleChildScrollView), findsNothing);
+      } else {
+        expect(find.byType(SingleChildScrollView), findsOneWidget);
+      }
       expect(find.byKey(const ValueKey('plan-annual')), findsOneWidget);
       expect(find.byKey(const ValueKey('plan-monthly')), findsOneWidget);
       expect(tester.takeException(), isNull);
@@ -989,12 +1022,6 @@ void main() {
       ];
       expect(benefitRects.map((rect) => rect.height).toSet(), hasLength(1));
 
-      await tester.scrollUntilVisible(
-        find.text('Continue Free'),
-        350,
-        scrollable: find.byType(Scrollable).last,
-      );
-
       final annualRect = tester.getRect(
         find.byKey(const ValueKey('plan-annual')),
       );
@@ -1002,10 +1029,18 @@ void main() {
         find.byKey(const ValueKey('plan-monthly')),
       );
       final footerRect = tester.getRect(find.text('Restore Purchases'));
+      final continueFreeRect = tester.getRect(find.text('Continue Free'));
+      final privacyRect = tester.getRect(find.text('Privacy Policy'));
+      final termsRect = tester.getRect(find.text('Terms of Use'));
 
       expect(monthlyRect.top, closeTo(annualRect.top, 0.1));
       expect(monthlyRect.height, closeTo(annualRect.height, 0.1));
+      expect(monthlyRect.bottom, closeTo(annualRect.bottom, 0.1));
       expect(footerRect.top, greaterThan(annualRect.bottom));
+      expect(footerRect.bottom, lessThanOrEqualTo(size.height));
+      expect(continueFreeRect.bottom, lessThanOrEqualTo(size.height));
+      expect(privacyRect.bottom, lessThanOrEqualTo(size.height));
+      expect(termsRect.bottom, lessThanOrEqualTo(size.height));
       expect(find.text(r'Equivalent to $8.33/month'), findsNothing);
       expect(find.text('Privacy Policy'), findsOneWidget);
       expect(find.text('Terms of Use'), findsOneWidget);

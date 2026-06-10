@@ -474,7 +474,7 @@ class _RitualStep extends StatelessWidget {
           SizedBox(height: 30),
           Text(
             '2 briefings to stay current.\n\n'
-            '3 judgment exercises to sharpen thinking.\n\n'
+            '3 decisions to sharpen judgment.\n\n'
             '1 articulation prompt to express ideas clearly.',
             textAlign: TextAlign.center,
             style: TextStyle(
@@ -513,7 +513,7 @@ class _RoleStep extends StatelessWidget {
         const SizedBox(height: 16),
         const Text(
           'Choose up to three areas.\n'
-          'Your selections shape tomorrow\'s ritual.',
+          'Your selections shape your daily ritual.',
           textAlign: TextAlign.center,
           style: TextStyle(
             color: SivraColors.mutedText,
@@ -554,22 +554,21 @@ class _IdentityStep extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          _SectionLabel(text: 'SIX MONTHS FROM NOW'),
+          _SectionLabel(text: '365 DAYS. 365 OPPORTUNITIES.'),
           SizedBox(height: 18),
           _HeroTitle(
             text: 'FROM INFORMED → SHARP',
             textAlign: TextAlign.center,
           ),
           SizedBox(height: 44),
+          _FutureStatement(text: '365 opportunities to think better.'),
+          _FutureStatement(text: 'Every ritual compounds.'),
+          _FutureStatement(text: 'Every insight is saved.'),
           _FutureStatement(
-            text: 'Six months from now, you won\'t just know more.',
+            text: 'The archive becomes your personal thinking system.',
           ),
           _FutureStatement(
-            text: 'You\'ll walk into meetings with a point of view.',
-          ),
-          _FutureStatement(text: 'Explain complexity clearly.'),
-          _FutureStatement(
-            text: 'And make better decisions under pressure.',
+            text: 'Make better decisions under pressure.',
             emphasized: true,
           ),
         ],
@@ -721,15 +720,15 @@ class _SigilGlow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 92,
-      height: 92,
-      padding: const EdgeInsets.all(22),
+      width: 112,
+      height: 112,
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: SivraColors.surface.withValues(alpha: 0.42),
+        color: SivraColors.surface.withValues(alpha: 0.32),
         boxShadow: [
           BoxShadow(
-            color: SivraColors.bronze.withValues(alpha: 0.2),
+            color: SivraColors.bronze.withValues(alpha: 0.14),
             blurRadius: 45,
             spreadRadius: 6,
           ),
@@ -749,15 +748,27 @@ class _RitualSummary extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        _SummaryItem(value: '2', label: 'Briefings'),
-        _SummaryDivider(),
-        _SummaryItem(value: '4', label: 'Exercises'),
-        _SummaryDivider(),
-        _SummaryItem(value: '7', label: 'Minutes'),
-      ],
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final dividerMargin = constraints.maxWidth < 330 ? 10.0 : 22.0;
+
+        return Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Expanded(
+              child: _SummaryItem(value: '2', label: 'Briefings'),
+            ),
+            _SummaryDivider(horizontalMargin: dividerMargin),
+            const Expanded(
+              child: _SummaryItem(value: '3', label: 'Decisions'),
+            ),
+            _SummaryDivider(horizontalMargin: dividerMargin),
+            const Expanded(
+              child: _SummaryItem(value: '7', label: 'Minutes'),
+            ),
+          ],
+        );
+      },
     );
   }
 }
@@ -781,12 +792,16 @@ class _SummaryItem extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 3),
-        Text(
-          label,
-          style: const TextStyle(
-            color: SivraColors.mutedText,
-            fontSize: 13,
-            letterSpacing: 0.2,
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+            label,
+            maxLines: 1,
+            style: const TextStyle(
+              color: SivraColors.mutedText,
+              fontSize: 13,
+              letterSpacing: 0.2,
+            ),
           ),
         ),
       ],
@@ -795,14 +810,16 @@ class _SummaryItem extends StatelessWidget {
 }
 
 class _SummaryDivider extends StatelessWidget {
-  const _SummaryDivider();
+  final double horizontalMargin;
+
+  const _SummaryDivider({required this.horizontalMargin});
 
   @override
   Widget build(BuildContext context) {
     return Container(
       width: 1,
       height: 34,
-      margin: const EdgeInsets.symmetric(horizontal: 22),
+      margin: EdgeInsets.symmetric(horizontal: horizontalMargin),
       color: SivraColors.warmIvory.withValues(alpha: 0.12),
     );
   }

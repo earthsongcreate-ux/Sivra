@@ -234,8 +234,19 @@ class _PaywallScreenState extends State<PaywallScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final compactChrome = MediaQuery.sizeOf(context).height <= 600;
     return Scaffold(
-      appBar: AppBar(title: const Text('Sivra Pro')),
+      appBar: AppBar(
+        toolbarHeight: compactChrome ? 50 : null,
+        title: Text(
+          'Sivra Pro',
+          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+            fontSize: compactChrome ? 18 : 20,
+            fontWeight: FontWeight.w500,
+            color: SivraColors.warmIvory,
+          ),
+        ),
+      ),
       body: DecoratedBox(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
@@ -300,114 +311,133 @@ class _PaywallContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final viewportHeight = MediaQuery.sizeOf(context).height;
     final annual = plans.firstWhere((plan) => plan.isAnnual);
     final monthly = plans.firstWhere((plan) => !plan.isAnnual);
-    final compactHeight = MediaQuery.sizeOf(context).height <= 600;
+    final compactHeight = viewportHeight <= 600;
+    final fitToScreen = viewportHeight <= 900;
+    final content = Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _PaywallHero(compact: compactHeight),
+        SizedBox(height: compactHeight ? 6 : 9),
+        Text(
+          'WHAT CONTINUES WITH SIVRA PRO',
+          style: Theme.of(context).textTheme.labelMedium?.copyWith(
+            color: SivraColors.bronze,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 1.2,
+          ),
+        ),
+        SizedBox(height: compactHeight ? 5 : 7),
+        _BenefitsGrid(
+          compact: compactHeight,
+          benefits: const <_BenefitData>[
+            _BenefitData(
+              icon: Icons.tune_rounded,
+              title: 'Personalized Daily Rituals',
+              detail: 'Shaped by your focus areas.',
+            ),
+            _BenefitData(
+              icon: Icons.auto_stories_outlined,
+              title: 'Thinking Archive',
+              detail: 'Keep your best ideas and insights.',
+            ),
+            _BenefitData(
+              icon: Icons.calendar_view_week_outlined,
+              title: 'Weekly Recaps',
+              detail: 'Reflect on patterns over time.',
+            ),
+            _BenefitData(
+              icon: Icons.radar_outlined,
+              title: 'Fresh Source Context',
+              detail: 'Stay current with selected signals.',
+            ),
+          ],
+        ),
+        SizedBox(height: compactHeight ? 8 : 10),
+        Text(
+          'CHOOSE YOUR PLAN',
+          style: Theme.of(context).textTheme.labelMedium?.copyWith(
+            color: SivraColors.bronze,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 1.2,
+          ),
+        ),
+        SizedBox(height: compactHeight ? 4 : 6),
+        _PricingSection(
+          annual: annual,
+          monthly: monthly,
+          processingPlanId: processingPlanId,
+          disabled: processingPlanId != null || restoring,
+          onPurchase: onPurchase,
+          compactHeight: compactHeight,
+        ),
+        SizedBox(height: compactHeight ? 4 : 7),
+        Wrap(
+          alignment: WrapAlignment.center,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: [
+            _FooterAction(
+              label: restoring ? 'Restoring...' : 'Restore Purchases',
+              onTap: processingPlanId == null && !restoring ? onRestore : null,
+            ),
+            Text(
+              '  |  ',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: SivraColors.mutedText.withValues(alpha: 0.42),
+              ),
+            ),
+            _FooterAction(
+              label: 'Continue Free',
+              onTap: processingPlanId == null && !restoring
+                  ? onContinueFree
+                  : null,
+            ),
+          ],
+        ),
+        Wrap(
+          alignment: WrapAlignment.center,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: [
+            _LegalLink(label: 'Privacy Policy', onTap: onOpenPrivacy),
+            Text(
+              '  •  ',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: SivraColors.mutedText.withValues(alpha: 0.6),
+              ),
+            ),
+            _LegalLink(label: 'Terms of Use', onTap: onOpenTerms),
+          ],
+        ),
+      ],
+    );
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        return SingleChildScrollView(
-          padding: EdgeInsets.fromLTRB(20, 14, 20, compactHeight ? 12 : 18),
-          child: ConstrainedBox(
-            constraints: BoxConstraints(minHeight: constraints.maxHeight - 32),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                _PaywallHero(compact: compactHeight),
-                SizedBox(height: compactHeight ? 18 : 20),
-                Text(
-                  'WHAT CONTINUES WITH SIVRA PRO',
-                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                    color: SivraColors.bronze,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 1.2,
-                  ),
+        if (fitToScreen) {
+          return SizedBox(
+            width: constraints.maxWidth,
+            height: constraints.maxHeight,
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.topCenter,
+              child: SizedBox(
+                width: constraints.maxWidth,
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 4, 20, 6),
+                  child: content,
                 ),
-                SizedBox(height: compactHeight ? 10 : 12),
-                _BenefitsGrid(
-                  compact: compactHeight,
-                  benefits: const <_BenefitData>[
-                    _BenefitData(
-                      icon: Icons.tune_rounded,
-                      title: 'Personalized Daily Rituals',
-                      detail: 'Shaped by your focus areas.',
-                    ),
-                    _BenefitData(
-                      icon: Icons.auto_stories_outlined,
-                      title: 'Thinking Archive',
-                      detail: 'Keep your best ideas and insights.',
-                    ),
-                    _BenefitData(
-                      icon: Icons.calendar_view_week_outlined,
-                      title: 'Weekly Recaps',
-                      detail: 'Reflect on patterns over time.',
-                    ),
-                    _BenefitData(
-                      icon: Icons.radar_outlined,
-                      title: 'Fresh Source Context',
-                      detail: 'Stay current with selected signals.',
-                    ),
-                  ],
-                ),
-                SizedBox(height: compactHeight ? 14 : 16),
-                Text(
-                  'CHOOSE YOUR PLAN',
-                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                    color: SivraColors.bronze,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 1.2,
-                  ),
-                ),
-                SizedBox(height: compactHeight ? 8 : 10),
-                _PricingSection(
-                  annual: annual,
-                  monthly: monthly,
-                  processingPlanId: processingPlanId,
-                  disabled: processingPlanId != null || restoring,
-                  onPurchase: onPurchase,
-                  compactHeight: compactHeight,
-                ),
-                SizedBox(height: compactHeight ? 12 : 12),
-                Wrap(
-                  alignment: WrapAlignment.center,
-                  crossAxisAlignment: WrapCrossAlignment.center,
-                  children: [
-                    _FooterAction(
-                      label: restoring ? 'Restoring...' : 'Restore Purchases',
-                      onTap: processingPlanId == null && !restoring
-                          ? onRestore
-                          : null,
-                    ),
-                    Text(
-                      '  |  ',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: SivraColors.mutedText.withValues(alpha: 0.42),
-                      ),
-                    ),
-                    _FooterAction(
-                      label: 'Continue Free',
-                      onTap: processingPlanId == null && !restoring
-                          ? onContinueFree
-                          : null,
-                    ),
-                  ],
-                ),
-                Wrap(
-                  alignment: WrapAlignment.center,
-                  crossAxisAlignment: WrapCrossAlignment.center,
-                  children: [
-                    _LegalLink(label: 'Privacy Policy', onTap: onOpenPrivacy),
-                    Text(
-                      '  •  ',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: SivraColors.mutedText.withValues(alpha: 0.6),
-                      ),
-                    ),
-                    _LegalLink(label: 'Terms of Use', onTap: onOpenTerms),
-                  ],
-                ),
-              ],
+              ),
             ),
+          );
+        }
+
+        return SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(20, 4, 20, 10),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: constraints.maxHeight - 24),
+            child: content,
           ),
         );
       },
@@ -424,10 +454,10 @@ class _PaywallHero extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: EdgeInsets.fromLTRB(
-        compact ? 20 : 22,
-        compact ? 20 : 24,
-        compact ? 20 : 22,
-        compact ? 19 : 23,
+        compact ? 9 : 11,
+        compact ? 8 : 10,
+        compact ? 9 : 11,
+        compact ? 8 : 10,
       ),
       decoration: BoxDecoration(
         gradient: LinearGradient(
@@ -461,22 +491,24 @@ class _PaywallHero extends StatelessWidget {
               letterSpacing: 1.4,
             ),
           ),
-          SizedBox(height: compact ? 10 : 12),
+          SizedBox(height: compact ? 6 : 7),
           Text(
-            'Continue Building Your Thinking System',
+            'Continue Building Your\nThinking System',
             style: Theme.of(context).textTheme.headlineMedium?.copyWith(
               color: SivraColors.warmIvory,
               fontWeight: FontWeight.w600,
               letterSpacing: -0.5,
-              height: 1.16,
+              height: 1.1,
+              fontSize: compact ? 20 : 23,
             ),
           ),
-          SizedBox(height: compact ? 10 : 13),
+          SizedBox(height: compact ? 5 : 6),
           Text(
-            'Develop sharper judgment, stronger articulation, and a growing archive of insights.',
+            'Develop sharper judgment, stronger articulation,\nand a growing archive of insights.',
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
               color: SivraColors.mutedText,
-              height: 1.5,
+              height: 1.22,
+              fontSize: compact ? 11.5 : 12.5,
             ),
           ),
         ],
@@ -509,10 +541,10 @@ class _BenefitsGrid extends StatelessWidget {
       builder: (context, constraints) {
         final itemWidth = (constraints.maxWidth - 10) / 2;
         final itemHeight = itemWidth < 150
-            ? 140.0
+            ? 108.0
             : compact
-            ? 128.0
-            : 130.0;
+            ? 96.0
+            : 108.0;
         return Wrap(
           spacing: compact ? 8 : 10,
           runSpacing: compact ? 8 : 10,
@@ -542,37 +574,49 @@ class _Benefit extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: EdgeInsets.fromLTRB(
-        compact ? 12 : 14,
-        compact ? 12 : 14,
-        compact ? 11 : 12,
-        compact ? 11 : 13,
+        compact ? 7 : 9,
+        compact ? 7 : 9,
+        compact ? 7 : 9,
+        compact ? 7 : 8,
       ),
       decoration: BoxDecoration(
         color: SivraColors.surface.withValues(alpha: 0.5),
         border: Border.all(color: SivraColors.bronze.withValues(alpha: 0.12)),
         borderRadius: BorderRadius.circular(18),
       ),
-      child: Column(
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(benefit.icon, size: 20, color: SivraColors.bronze),
-          SizedBox(height: compact ? 8 : 10),
-          Text(
-            benefit.title,
-            maxLines: 2,
-            style: Theme.of(context).textTheme.titleSmall?.copyWith(
-              color: SivraColors.warmIvory,
-              fontWeight: FontWeight.w600,
-              height: 1.2,
-            ),
+          Padding(
+            padding: const EdgeInsets.only(top: 2),
+            child: Icon(benefit.icon, size: 18, color: SivraColors.bronze),
           ),
-          SizedBox(height: compact ? 4 : 5),
-          Text(
-            benefit.detail,
-            maxLines: 2,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: SivraColors.mutedText,
-              height: 1.3,
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  benefit.title,
+                  maxLines: 2,
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                    color: SivraColors.warmIvory,
+                    fontWeight: FontWeight.w600,
+                    height: 1.12,
+                    fontSize: compact ? 13.5 : null,
+                  ),
+                ),
+                SizedBox(height: compact ? 4 : 5),
+                Text(
+                  benefit.detail,
+                  maxLines: 2,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: SivraColors.mutedText,
+                    height: 1.22,
+                    fontSize: compact ? 11.5 : null,
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -601,7 +645,7 @@ class _PricingSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.all(compactHeight ? 8 : 10),
+      padding: EdgeInsets.all(compactHeight ? 5 : 8),
       decoration: BoxDecoration(
         color: SivraColors.surface.withValues(alpha: 0.32),
         border: Border.all(color: SivraColors.bronze.withValues(alpha: 0.12)),
@@ -655,13 +699,14 @@ class _PlanCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final annual = plan.isAnnual;
+    final headerHeight = compact ? 54.0 : 60.0;
     return Container(
       key: ValueKey('plan-${plan.id}'),
       padding: EdgeInsets.fromLTRB(
-        compact ? 12 : 16,
-        compact ? 11 : 14,
-        compact ? 12 : 16,
-        compact ? 11 : 14,
+        compact ? 7 : 10,
+        compact ? 6 : 8,
+        compact ? 7 : 10,
+        compact ? 6 : 8,
       ),
       decoration: BoxDecoration(
         gradient: LinearGradient(
@@ -695,72 +740,96 @@ class _PlanCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (annual)
-            Row(
+          SizedBox(
+            height: headerHeight,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(
-                  child: Align(
-                    alignment: Alignment.centerLeft,
-                    child: FittedBox(
-                      fit: BoxFit.scaleDown,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 7,
-                          vertical: 3,
-                        ),
-                        decoration: BoxDecoration(
-                          color: SivraColors.bronze.withValues(alpha: 0.12),
-                          borderRadius: BorderRadius.circular(999),
-                        ),
-                        child: Text(
-                          'Recommended',
-                          maxLines: 1,
-                          style: Theme.of(context).textTheme.labelSmall
-                              ?.copyWith(
-                                color: SivraColors.bronze,
-                                fontWeight: FontWeight.w600,
-                                fontSize: compact ? 9.5 : null,
+                if (annual)
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Align(
+                          alignment: Alignment.centerLeft,
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 7,
+                                vertical: 3,
                               ),
+                              decoration: BoxDecoration(
+                                color: SivraColors.bronze.withValues(
+                                  alpha: 0.12,
+                                ),
+                                borderRadius: BorderRadius.circular(999),
+                              ),
+                              child: Text(
+                                'Recommended',
+                                maxLines: 1,
+                                style: Theme.of(context).textTheme.labelSmall
+                                    ?.copyWith(
+                                      color: SivraColors.bronze,
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: compact ? 9 : null,
+                                    ),
+                              ),
+                            ),
+                          ),
                         ),
                       ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 4),
-                Flexible(
-                  child: FittedBox(
-                    fit: BoxFit.scaleDown,
-                    child: Text(
-                      'Save 36%',
-                      maxLines: 1,
-                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        color: SivraColors.bronze,
-                        fontWeight: FontWeight.w700,
-                        fontSize: compact ? 9.5 : null,
+                      const SizedBox(width: 4),
+                      Flexible(
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text(
+                            'Save 36%',
+                            maxLines: 1,
+                            style: Theme.of(context).textTheme.labelSmall
+                                ?.copyWith(
+                                  color: SivraColors.bronze,
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: compact ? 9 : null,
+                                ),
+                          ),
+                        ),
                       ),
+                    ],
+                  )
+                else
+                  SizedBox(height: compact ? 14 : 16),
+                const Spacer(),
+                Text(
+                  plan.hasTrial ? '7-Day Free Trial' : 'Monthly',
+                  maxLines: 1,
+                  style:
+                      (plan.hasTrial
+                              ? Theme.of(context).textTheme.titleMedium
+                              : Theme.of(context).textTheme.titleMedium)
+                          ?.copyWith(
+                            color: plan.hasTrial
+                                ? SivraColors.bronze
+                                : SivraColors.warmIvory,
+                            fontWeight: FontWeight.w700,
+                            fontSize: compact ? 14 : null,
+                          ),
+                ),
+                if (!plan.hasTrial) ...[
+                  const SizedBox(height: 1),
+                  Text(
+                    'Cancel anytime',
+                    maxLines: 1,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: SivraColors.mutedText,
+                      fontWeight: FontWeight.w500,
+                      fontSize: compact ? 11.5 : null,
                     ),
                   ),
-                ),
+                ],
               ],
-            )
-          else
-            Text(
-              'Monthly',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                color: SivraColors.warmIvory,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          const SizedBox(height: 6),
-          Text(
-            plan.hasTrial ? '7-Day Free Trial' : 'Cancel anytime',
-            maxLines: 1,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: plan.hasTrial ? SivraColors.bronze : SivraColors.mutedText,
-              fontWeight: plan.hasTrial ? FontWeight.w600 : FontWeight.w500,
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 2),
           Text(
             plan.price,
             maxLines: 1,
@@ -771,17 +840,18 @@ class _PlanCard extends StatelessWidget {
                     ?.copyWith(
                       color: SivraColors.warmIvory,
                       fontWeight: FontWeight.w700,
+                      fontSize: compact ? 14 : null,
                     ),
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 2),
           SizedBox(
             width: double.infinity,
             child: FilledButton(
               key: ValueKey('purchase-${plan.id}'),
               onPressed: disabled ? null : onPurchase,
               style: FilledButton.styleFrom(
-                minimumSize: const Size.fromHeight(40),
-                maximumSize: const Size.fromHeight(40),
+                minimumSize: const Size.fromHeight(32),
+                maximumSize: const Size.fromHeight(32),
                 backgroundColor: annual
                     ? SivraColors.bronze
                     : SivraColors.bronze.withValues(alpha: 0.17),
@@ -808,7 +878,7 @@ class _PlanCard extends StatelessWidget {
                 overflow: TextOverflow.fade,
                 softWrap: false,
                 style: TextStyle(
-                  fontSize: compact ? 9.5 : 12,
+                  fontSize: compact ? 8.5 : 10.5,
                   fontWeight: FontWeight.w700,
                   height: 1,
                 ),
@@ -832,7 +902,7 @@ class _LegalLink extends StatelessWidget {
     return TextButton(
       onPressed: onTap,
       style: TextButton.styleFrom(
-        minimumSize: const Size(0, 40),
+        minimumSize: const Size(0, 32),
         padding: const EdgeInsets.symmetric(horizontal: 4),
         foregroundColor: SivraColors.mutedText.withValues(alpha: 0.76),
         textStyle: Theme.of(context).textTheme.labelSmall?.copyWith(
@@ -856,7 +926,7 @@ class _FooterAction extends StatelessWidget {
     return TextButton(
       onPressed: onTap,
       style: TextButton.styleFrom(
-        minimumSize: const Size(0, 40),
+        minimumSize: const Size(0, 32),
         padding: const EdgeInsets.symmetric(horizontal: 4),
         foregroundColor: SivraColors.mutedText.withValues(alpha: 0.86),
         textStyle: Theme.of(
