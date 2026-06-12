@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:sivra/design/sivra_theme.dart';
 import 'package:sivra/data/mock_daily_pack.dart';
@@ -20,10 +21,26 @@ import 'package:sivra/screens/today_screen.dart';
 import 'package:sivra/screens/weekly_recap_screen.dart';
 import 'package:sivra/services/daily_pack_validator.dart';
 import 'package:sivra/services/daily_thought_engine.dart';
+import 'package:sivra/services/debug_onboarding_override.dart';
 import 'package:sivra/services/personalization_engine.dart';
 import 'package:sivra/services/thought_repository.dart';
 
 void main() {
+  test(
+    'debug onboarding override persists locally and can be cleared',
+    () async {
+      SharedPreferences.setMockInitialValues(<String, Object>{});
+
+      expect(await DebugOnboardingOverride.isEnabledFor('test-user'), isFalse);
+
+      await DebugOnboardingOverride.enableFor('test-user');
+      expect(await DebugOnboardingOverride.isEnabledFor('test-user'), isTrue);
+
+      await DebugOnboardingOverride.clearFor('test-user');
+      expect(await DebugOnboardingOverride.isEnabledFor('test-user'), isFalse);
+    },
+  );
+
   testWidgets('app shell fits the target iPhone viewports', (
     WidgetTester tester,
   ) async {
@@ -160,10 +177,11 @@ void main() {
     );
 
     expect(find.bySemanticsLabel('Sivra'), findsOneWidget);
-    expect(find.text('Walk Into Any Room Prepared'), findsOneWidget);
+    expect(find.text('WALK INTO ANY ROOM PREPARED'), findsOneWidget);
     expect(
       find.text(
-        'A daily thinking ritual for founders,\noperators, and builders.',
+        'Sharpen judgment, decision-making, and communication\n'
+        'in 7 minutes a day.',
       ),
       findsOneWidget,
     );
@@ -171,10 +189,10 @@ void main() {
     expect(find.text('3'), findsOneWidget);
     expect(find.text('7'), findsOneWidget);
     expect(find.text('Decisions'), findsOneWidget);
-    expect(find.text('Continue'), findsOneWidget);
+    expect(find.text('Begin'), findsOneWidget);
   });
 
-  testWidgets('onboarding advances through four-screen ritual flow', (
+  testWidgets('onboarding advances through five-screen ritual flow', (
     WidgetTester tester,
   ) async {
     await tester.pumpWidget(
@@ -186,15 +204,13 @@ void main() {
       ),
     );
 
-    await tester.tap(find.text('Continue'));
+    await tester.tap(find.text('Begin'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Your Daily Ritual'), findsOneWidget);
-    expect(find.text('7 minutes.'), findsOneWidget);
-    expect(
-      find.textContaining('3 decisions to sharpen judgment'),
-      findsOneWidget,
-    );
+    expect(find.text('GREAT THINKING IS A DAILY PRACTICE'), findsOneWidget);
+    expect(find.text('2'), findsOneWidget);
+    expect(find.text('Briefings'), findsOneWidget);
+    expect(find.text('Read.\nDecide.\nExplain.\nRepeat.'), findsOneWidget);
     await tester.tap(find.text('Continue'));
     await tester.pumpAndSettle();
 
@@ -202,7 +218,7 @@ void main() {
     expect(
       find.text(
         'Choose up to three areas.\n'
-        'Your selections shape your daily ritual.',
+        'Your daily ritual adapts to how you think.',
       ),
       findsOneWidget,
     );
@@ -219,15 +235,27 @@ void main() {
     await tester.tap(find.text('Continue'));
     await tester.pumpAndSettle();
 
-    expect(find.text('FROM INFORMED → SHARP'), findsOneWidget);
-    expect(find.text('365 DAYS. 365 OPPORTUNITIES.'), findsOneWidget);
+    expect(find.text('YOUR THINKING COMPOUNDS'), findsOneWidget);
+    expect(find.text('LEARNING MEMORY'), findsOneWidget);
     expect(
-      find.text('The archive becomes your personal thinking system.'),
+      find.text(
+        'Every briefing, decision, and answer becomes part of your learning memory.',
+      ),
       findsOneWidget,
     );
-    expect(find.text('Make better decisions under pressure.'), findsOneWidget);
-    expect(find.text('Begin My Ritual'), findsOneWidget);
+    expect(find.text('Weekly recap'), findsOneWidget);
 
+    await tester.tap(find.text('Continue'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('YOUR RITUAL IS READY'), findsOneWidget);
+    expect(find.text('Founder'), findsOneWidget);
+    expect(find.text('Your edge is prepared.'), findsOneWidget);
+    expect(find.text('Begin Today’s Ritual'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('Back'));
+    await tester.pumpAndSettle();
+    expect(find.text('YOUR THINKING COMPOUNDS'), findsOneWidget);
     await tester.tap(find.byTooltip('Back'));
     await tester.pumpAndSettle();
     expect(find.text('WHERE DO YOU WANT TO BECOME SHARPER?'), findsOneWidget);
@@ -242,12 +270,13 @@ void main() {
 
     for (final size in const <Size>[
       Size(320, 568),
-      Size(390, 844),
-      Size(402, 874),
+      Size(375, 812),
+      Size(393, 852),
+      Size(430, 932),
     ]) {
       tester.view.physicalSize = size;
 
-      for (var step = 0; step < 4; step++) {
+      for (var step = 0; step < 5; step++) {
         await tester.pumpWidget(
           MaterialApp(
             theme: SivraTheme.light(),
@@ -256,7 +285,7 @@ void main() {
             home: OnboardingScreen(
               uid: 'test',
               initialStepIndex: step,
-              initialSelectedFocus: step == 2
+              initialSelectedFocus: step >= 2
                   ? const <String>['Founder']
                   : const <String>[],
               onCompleted: _noop,
@@ -266,16 +295,85 @@ void main() {
         await tester.pumpAndSettle();
 
         final cta = tester.getRect(
-          find.text(step == 3 ? 'Begin My Ritual' : 'Continue'),
+          find.text(switch (step) {
+            0 => 'Begin',
+            4 => 'Begin Today’s Ritual',
+            _ => 'Continue',
+          }),
         );
         expect(cta.bottom, lessThanOrEqualTo(size.height));
         expect(
           tester.takeException(),
           isNull,
-          reason: 'Step $step overflowed at ${size.width}x${size.height}.',
+          reason:
+              'Step $step initially overflowed at ${size.width}x${size.height}.',
         );
+        if (step == 2) {
+          await tester.drag(
+            find.byType(CustomScrollView),
+            const Offset(0, -360),
+          );
+          await tester.pumpAndSettle();
+          final selectedCard = tester.getRect(
+            find.byKey(const ValueKey('role-chip-selected-Founder')),
+          );
+          expect(selectedCard.left, greaterThanOrEqualTo(0));
+          expect(selectedCard.right, lessThanOrEqualTo(size.width));
+          final scrollException = tester.takeException();
+          expect(
+            scrollException,
+            isNull,
+            reason:
+                'Step $step overflowed after scrolling at '
+                '${size.width}x${size.height}.',
+          );
+        }
         await tester.pumpWidget(const SizedBox.shrink());
       }
+    }
+  });
+
+  testWidgets('onboarding supports larger dynamic type', (
+    WidgetTester tester,
+  ) async {
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(320, 568);
+
+    for (var step = 0; step < 5; step++) {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: SivraTheme.light(),
+          darkTheme: SivraTheme.dark(),
+          themeMode: ThemeMode.dark,
+          builder: (context, child) {
+            final mediaQuery = MediaQuery.of(context);
+            return MediaQuery(
+              data: mediaQuery.copyWith(
+                textScaler: const TextScaler.linear(1.3),
+              ),
+              child: child!,
+            );
+          },
+          home: OnboardingScreen(
+            uid: 'test',
+            initialStepIndex: step,
+            initialSelectedFocus: step >= 2
+                ? const <String>['Founder']
+                : const <String>[],
+            onCompleted: _noop,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        tester.takeException(),
+        isNull,
+        reason: 'Step $step overflowed with larger dynamic type.',
+      );
+      await tester.pumpWidget(const SizedBox.shrink());
     }
   });
 
@@ -295,22 +393,31 @@ void main() {
       ),
     );
 
-    await tester.tap(find.text('Founder'));
-    await tester.tap(find.text('Product Strategy'));
-    await tester.tap(find.text('Operator'));
-    await tester.tap(find.text('Investor'));
+    for (final label in <String>[
+      'Founder',
+      'Product Strategy',
+      'Operator',
+      'Investor',
+    ]) {
+      final card = find.byKey(ValueKey('role-chip-$label'));
+      await tester.ensureVisible(card);
+      await tester.tap(card);
+      await tester.pump();
+    }
     await tester.pump();
 
+    expect(find.byKey(const ValueKey('role-chip-Investor')), findsOneWidget);
     expect(
-      find.byWidgetPredicate(
-        (widget) =>
-            widget.key is ValueKey<String> &&
-            (widget.key! as ValueKey<String>).value.startsWith(
-              'role-chip-selected-',
-            ),
-      ),
-      findsNWidgets(3),
+      find.byKey(const ValueKey('role-chip-selected-Investor')),
+      findsNothing,
     );
+
+    final founderCard = find.byKey(
+      const ValueKey('role-chip-selected-Founder'),
+    );
+    await tester.drag(find.byType(CustomScrollView), const Offset(0, 600));
+    await tester.pumpAndSettle();
+    expect(founderCard, findsOneWidget);
   });
 
   testWidgets(
@@ -358,7 +465,9 @@ void main() {
       await tester.pump();
       await tester.tap(find.text('Continue'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Begin My Ritual'));
+      await tester.tap(find.text('Continue'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Begin Today’s Ritual'));
       await tester.pumpAndSettle();
 
       expect(find.textContaining('Continue Building Your'), findsOneWidget);
@@ -425,7 +534,9 @@ void main() {
       await tester.pump();
       await tester.tap(find.text('Continue'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Begin My Ritual'));
+      await tester.tap(find.text('Continue'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Begin Today’s Ritual'));
       await tester.pumpAndSettle();
       await tester.tap(find.byKey(const ValueKey('purchase-annual')));
       await tester.pumpAndSettle();
@@ -480,7 +591,9 @@ void main() {
       await tester.pump();
       await tester.tap(find.text('Continue'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Begin My Ritual'));
+      await tester.tap(find.text('Continue'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Begin Today’s Ritual'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Continue Free'));
       await tester.pumpAndSettle();
@@ -601,6 +714,7 @@ void main() {
       scrollable: find.byType(Scrollable).last,
     );
     expect(find.text('Diagnostics'), findsOneWidget);
+    expect(find.text('Reset Onboarding'), findsOneWidget);
   });
 
   testWidgets('production Profile hides developer tools', (
@@ -634,6 +748,69 @@ void main() {
     expect(find.text('Content QA'), findsNothing);
     expect(find.text('Source Admin'), findsNothing);
     expect(find.text('Diagnostics'), findsNothing);
+    expect(find.text('Reset Onboarding'), findsNothing);
+  });
+
+  testWidgets('developer Profile can reset onboarding for the current user', (
+    WidgetTester tester,
+  ) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final pack = DailyPack(
+      dayId: '2026-06-08',
+      focusAreas: const <String>['Product strategy'],
+      items: MockDailyPack.forFocus(const <String>['Product strategy']),
+    );
+    var resetCalled = false;
+    var completionCalled = false;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: SivraTheme.light(),
+        darkTheme: SivraTheme.dark(),
+        themeMode: ThemeMode.dark,
+        home: ProfileScreen(
+          uid: 'test-user',
+          firstName: 'Alex',
+          pack: pack,
+          showDeveloperTools: true,
+          onResetOnboarding: () async {
+            resetCalled = true;
+          },
+          onResetOnboardingComplete: (context) async {
+            completionCalled = true;
+          },
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.scrollUntilVisible(
+      find.text('Reset Onboarding'),
+      300,
+      scrollable: find.byType(Scrollable).last,
+    );
+    final resetAction = find.byKey(
+      const ValueKey('profile-action-Reset Onboarding'),
+    );
+    await tester.ensureVisible(resetAction);
+    await tester.tap(resetAction);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Reset onboarding?'), findsOneWidget);
+    expect(
+      find.textContaining('RevenueCat entitlements are not changed.'),
+      findsOneWidget,
+    );
+
+    await tester.tap(find.text('Reset'));
+    await tester.pumpAndSettle();
+
+    expect(resetCalled, isTrue);
+    expect(completionCalled, isTrue);
   });
 
   testWidgets('daily pack uses separate question and exit navigation', (

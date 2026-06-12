@@ -1,9 +1,12 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../design/sivra_colors.dart';
+import '../services/debug_onboarding_override.dart';
 import '../services/firestore_service.dart';
+import '../widgets/sivra_motif.dart';
 import 'app_shell.dart';
 import 'paywall_screen.dart';
 
@@ -41,7 +44,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     'Investor',
     'Builder',
     'Marketing',
-    'Other',
   ];
 
   final Set<String> _selectedRoles = {};
@@ -49,7 +51,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   bool _saving = false;
   bool _brandAssetsCached = false;
 
-  static const _stepCount = 4;
+  static const _stepCount = 5;
 
   bool get _canContinue {
     return switch (_stepIndex) {
@@ -150,6 +152,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       );
     } catch (_) {
       if (widget.allowLocalCompletion) {
+        if (kDebugMode) {
+          await DebugOnboardingOverride.clearFor(widget.uid);
+        }
         await _finish(focusAreas);
         return;
       }
@@ -170,6 +175,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       return;
     }
 
+    if (kDebugMode) {
+      await DebugOnboardingOverride.clearFor(widget.uid);
+    }
     await _finish(focusAreas);
   }
 
@@ -218,7 +226,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       0 => 'promise',
       1 => 'ritual',
       2 => 'personalization',
-      _ => 'identity_shift',
+      3 => 'learning_memory',
+      _ => 'ritual_ready',
     };
   }
 
@@ -227,73 +236,84 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       return 'Saving...';
     }
     return switch (_stepIndex) {
-      3 => 'Begin My Ritual',
+      0 => 'Begin',
+      4 => 'Begin Today’s Ritual',
       _ => 'Continue',
     };
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: SivraColors.deepInk,
-      body: _ChamberBackground(
-        child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 10, 20, 24),
-            child: Column(
-              children: [
-                _OnboardingHeader(canGoBack: _stepIndex > 0, onBack: _back),
-                const SizedBox(height: 8),
-                _ProgressDots(index: _stepIndex, count: _stepCount),
-                const SizedBox(height: 12),
-                Expanded(
-                  child: AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 320),
-                    switchInCurve: Curves.easeOutCubic,
-                    switchOutCurve: Curves.easeInCubic,
-                    transitionBuilder: (child, animation) {
-                      final offset = Tween<Offset>(
-                        begin: const Offset(0.035, 0),
-                        end: Offset.zero,
-                      ).animate(animation);
-                      return FadeTransition(
-                        opacity: animation,
-                        child: SlideTransition(position: offset, child: child),
-                      );
-                    },
-                    child: KeyedSubtree(
-                      key: ValueKey(_stepIndex),
-                      child: _buildStep(context),
+    final theme = Theme.of(context);
+
+    return Theme(
+      data: theme.copyWith(
+        textTheme: theme.textTheme.apply(fontFamily: 'Inter'),
+        primaryTextTheme: theme.primaryTextTheme.apply(fontFamily: 'Inter'),
+      ),
+      child: Scaffold(
+        backgroundColor: SivraColors.deepInk,
+        body: _ChamberBackground(
+          child: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 10, 20, 24),
+              child: Column(
+                children: [
+                  _OnboardingHeader(canGoBack: _stepIndex > 0, onBack: _back),
+                  const SizedBox(height: 8),
+                  _ProgressDots(index: _stepIndex, count: _stepCount),
+                  const SizedBox(height: 12),
+                  Expanded(
+                    child: AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 320),
+                      switchInCurve: Curves.easeOutCubic,
+                      switchOutCurve: Curves.easeInCubic,
+                      transitionBuilder: (child, animation) {
+                        final offset = Tween<Offset>(
+                          begin: const Offset(0.035, 0),
+                          end: Offset.zero,
+                        ).animate(animation);
+                        return FadeTransition(
+                          opacity: animation,
+                          child: SlideTransition(
+                            position: offset,
+                            child: child,
+                          ),
+                        );
+                      },
+                      child: KeyedSubtree(
+                        key: ValueKey(_stepIndex),
+                        child: _buildStep(context),
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(height: 22),
-                SizedBox(
-                  width: double.infinity,
-                  child: FilledButton(
-                    style: FilledButton.styleFrom(
-                      minimumSize: const Size.fromHeight(58),
-                      backgroundColor: SivraColors.bronze,
-                      foregroundColor: SivraColors.deepInk,
-                      disabledBackgroundColor: SivraColors.bronze.withValues(
-                        alpha: 0.28,
+                  const SizedBox(height: 22),
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton(
+                      style: FilledButton.styleFrom(
+                        minimumSize: const Size.fromHeight(58),
+                        backgroundColor: SivraColors.bronze,
+                        foregroundColor: SivraColors.deepInk,
+                        disabledBackgroundColor: SivraColors.bronze.withValues(
+                          alpha: 0.28,
+                        ),
+                        disabledForegroundColor: SivraColors.warmIvory
+                            .withValues(alpha: 0.42),
+                        elevation: 8,
+                        shadowColor: SivraColors.bronze.withValues(alpha: 0.25),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(22),
+                        ),
+                        textStyle: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(fontWeight: FontWeight.w700),
                       ),
-                      disabledForegroundColor: SivraColors.warmIvory.withValues(
-                        alpha: 0.42,
-                      ),
-                      elevation: 8,
-                      shadowColor: SivraColors.bronze.withValues(alpha: 0.25),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(22),
-                      ),
-                      textStyle: Theme.of(context).textTheme.titleMedium
-                          ?.copyWith(fontWeight: FontWeight.w700),
+                      onPressed: _canContinue && !_saving ? _continue : null,
+                      child: Text(_continueLabel),
                     ),
-                    onPressed: _canContinue && !_saving ? _continue : null,
-                    child: Text(_continueLabel),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
@@ -310,7 +330,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         options: _roleOptions,
         onChanged: _setRoleSelected,
       ),
-      _ => const _IdentityStep(),
+      3 => const _LearningMemoryStep(),
+      _ => _ReadyStep(selectedRoles: _selectedRoles.toList()),
     };
   }
 
@@ -394,24 +415,25 @@ class _ProgressDots extends StatelessWidget {
       key: const ValueKey('onboarding-progress'),
       mainAxisAlignment: MainAxisAlignment.center,
       children: List.generate(count, (dotIndex) {
-        final completed = dotIndex <= index;
+        final active = dotIndex == index;
+        final size = active ? 8.0 : 6.0;
 
         return Padding(
           padding: const EdgeInsets.symmetric(horizontal: 5),
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 240),
             curve: Curves.easeOutCubic,
-            height: 8,
-            width: 8,
+            height: size,
+            width: size,
             decoration: BoxDecoration(
-              color: completed
-                  ? colors.primary
+              color: active
+                  ? SivraColors.bronze
                   : colors.onSurface.withValues(alpha: 0.2),
               shape: BoxShape.circle,
-              boxShadow: completed
+              boxShadow: active
                   ? [
                       BoxShadow(
-                        color: colors.primary.withValues(alpha: 0.34),
+                        color: SivraColors.bronze.withValues(alpha: 0.3),
                         blurRadius: 8,
                       ),
                     ]
@@ -430,26 +452,32 @@ class _PromiseStep extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const _CenteredStep(
+      verticalOffset: -48,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           _SigilGlow(),
-          SizedBox(height: 40),
+          SizedBox(height: 34),
+          _SectionLabel(text: 'DAILY RITUAL'),
+          SizedBox(height: 14),
           _HeroTitle(
-            text: 'Walk Into Any Room Prepared',
+            text: 'WALK INTO ANY ROOM PREPARED',
             textAlign: TextAlign.center,
           ),
-          SizedBox(height: 28),
+          SizedBox(height: 22),
+          SivraMotif(),
+          SizedBox(height: 22),
           Text(
-            'A daily thinking ritual for founders,\noperators, and builders.',
+            'Sharpen judgment, decision-making, and communication\n'
+            'in 7 minutes a day.',
             textAlign: TextAlign.center,
             style: TextStyle(
               color: SivraColors.mutedText,
-              fontSize: 17,
-              height: 1.5,
+              fontSize: 16,
+              height: 1.45,
             ),
           ),
-          SizedBox(height: 30),
+          SizedBox(height: 28),
           _RitualSummary(),
         ],
       ),
@@ -466,21 +494,27 @@ class _RitualStep extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          _SectionLabel(text: 'YOUR DAILY PRACTICE'),
+          _SectionLabel(text: 'THE PRACTICE'),
           SizedBox(height: 14),
-          _HeroTitle(text: 'Your Daily Ritual', textAlign: TextAlign.center),
-          SizedBox(height: 36),
-          _RitualCard(),
+          _HeroTitle(
+            text: 'GREAT THINKING IS A DAILY PRACTICE',
+            textAlign: TextAlign.center,
+            fontSize: 35,
+          ),
+          SizedBox(height: 22),
+          SivraMotif(),
+          SizedBox(height: 28),
+          _RitualSequence(),
           SizedBox(height: 30),
           Text(
-            '2 briefings to stay current.\n\n'
-            '3 decisions to sharpen judgment.\n\n'
-            '1 articulation prompt to express ideas clearly.',
+            'Read.\nDecide.\nExplain.\nRepeat.',
             textAlign: TextAlign.center,
             style: TextStyle(
-              color: SivraColors.mutedText,
-              fontSize: 15,
-              height: 1.4,
+              color: SivraColors.warmIvory,
+              fontSize: 18,
+              height: 1.55,
+              fontWeight: FontWeight.w500,
+              letterSpacing: 0.2,
             ),
           ),
         ],
@@ -502,51 +536,340 @@ class _RoleStep extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.only(top: 24, bottom: 12),
-      children: [
-        const _HeroTitle(
-          text: 'WHERE DO YOU WANT TO BECOME SHARPER?',
-          textAlign: TextAlign.center,
-          fontSize: 30,
-        ),
-        const SizedBox(height: 16),
-        const Text(
-          'Choose up to three areas.\n'
-          'Your selections shape your daily ritual.',
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            color: SivraColors.mutedText,
-            fontSize: 17,
-            height: 1.45,
+    return CustomScrollView(
+      clipBehavior: Clip.none,
+      semanticChildCount: options.length,
+      slivers: [
+        const SliverPadding(
+          padding: EdgeInsets.fromLTRB(0, 18, 0, 28),
+          sliver: SliverToBoxAdapter(
+            child: Column(
+              children: [
+                _SectionLabel(text: 'YOUR FOCUS'),
+                SizedBox(height: 14),
+                _HeroTitle(
+                  text: 'WHERE DO YOU WANT TO BECOME SHARPER?',
+                  textAlign: TextAlign.center,
+                  fontSize: 31,
+                ),
+                SizedBox(height: 18),
+                SivraMotif(width: 138),
+                SizedBox(height: 18),
+                Text(
+                  'Choose up to three areas.\n'
+                  'Your daily ritual adapts to how you think.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: SivraColors.mutedText,
+                    fontSize: 16,
+                    height: 1.45,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
-        const SizedBox(height: 44),
-        Wrap(
-          alignment: WrapAlignment.center,
-          spacing: 12,
-          runSpacing: 12,
-          children: options.map((option) {
+        SliverList.separated(
+          itemBuilder: (context, index) {
+            final option = options[index];
             final isSelected = selected.contains(option);
             final disabled = !isSelected && selected.length >= 3;
+            final label = option == 'Product / Strategy'
+                ? 'Product Strategy'
+                : option;
 
-            return _IdentityChip(
-              label: option == 'Product / Strategy'
-                  ? 'Product Strategy'
-                  : option,
+            return _FocusCard(
+              label: label,
+              icon: _iconForRole(option),
               selected: isSelected,
               disabled: disabled,
               onTap: () => onChanged(option, !isSelected),
             );
-          }).toList(),
+          },
+          separatorBuilder: (context, index) => const SizedBox(height: 12),
+          itemCount: options.length,
+        ),
+        const SliverPadding(
+          padding: EdgeInsets.fromLTRB(4, 20, 0, 8),
+          sliver: SliverToBoxAdapter(
+            child: Row(
+              children: [
+                Icon(
+                  Icons.info_outline_rounded,
+                  size: 18,
+                  color: SivraColors.mutedText,
+                ),
+                SizedBox(width: 9),
+                Expanded(
+                  child: Text(
+                    'Select up to three focus areas.',
+                    style: TextStyle(
+                      color: SivraColors.mutedText,
+                      fontSize: 13,
+                      letterSpacing: 0.2,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ],
     );
   }
+
+  IconData? _iconForRole(String role) {
+    return switch (role) {
+      'Founder' => null,
+      'Product / Strategy' => Icons.gps_fixed_rounded,
+      'Operator' => Icons.settings_rounded,
+      'Investor' => Icons.bar_chart_rounded,
+      'Builder' => Icons.construction_rounded,
+      'Marketing' => Icons.campaign_rounded,
+      _ => Icons.adjust_rounded,
+    };
+  }
 }
 
-class _IdentityStep extends StatelessWidget {
-  const _IdentityStep();
+class _FocusCard extends StatelessWidget {
+  final String label;
+  final IconData? icon;
+  final bool selected;
+  final bool disabled;
+  final VoidCallback onTap;
+
+  const _FocusCard({
+    required this.label,
+    required this.icon,
+    required this.selected,
+    required this.disabled,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final iconColor = selected
+        ? SivraColors.bronze
+        : SivraColors.mutedText.withValues(alpha: 0.72);
+
+    return Semantics(
+      label: '$label focus area',
+      selected: selected,
+      enabled: !disabled,
+      button: true,
+      child: AnimatedOpacity(
+        duration: const Duration(milliseconds: 180),
+        opacity: disabled ? 0.48 : 1,
+        child: AnimatedScale(
+          duration: const Duration(milliseconds: 180),
+          curve: Curves.easeOutCubic,
+          scale: selected ? 1.008 : 1,
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              key: ValueKey(
+                selected ? 'role-chip-selected-$label' : 'role-chip-$label',
+              ),
+              onTap: disabled ? null : onTap,
+              borderRadius: BorderRadius.circular(20),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 180),
+                curve: Curves.easeOutCubic,
+                constraints: const BoxConstraints(minHeight: 76),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 18,
+                  vertical: 11,
+                ),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(20),
+                  color: selected
+                      ? SivraColors.surfaceSoft
+                      : SivraColors.surface.withValues(alpha: 0.72),
+                  border: Border.all(
+                    color: selected
+                        ? SivraColors.bronze
+                        : SivraColors.bronze.withValues(alpha: 0.2),
+                    width: selected ? 1.25 : 1,
+                  ),
+                  boxShadow: selected
+                      ? [
+                          BoxShadow(
+                            color: SivraColors.bronze.withValues(alpha: 0.17),
+                            blurRadius: 20,
+                            spreadRadius: 1,
+                          ),
+                        ]
+                      : null,
+                ),
+                child: Row(
+                  children: [
+                    AnimatedContainer(
+                      duration: const Duration(milliseconds: 180),
+                      width: 48,
+                      height: 48,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: selected
+                            ? SivraColors.bronze.withValues(alpha: 0.11)
+                            : Colors.transparent,
+                        border: Border.all(
+                          color: selected
+                              ? SivraColors.bronze.withValues(alpha: 0.48)
+                              : SivraColors.mutedText.withValues(alpha: 0.3),
+                        ),
+                      ),
+                      child: icon == null
+                          ? Semantics(
+                              label: 'Knight',
+                              child: CustomPaint(
+                                size: const Size.square(28),
+                                painter: _KnightIconPainter(iconColor),
+                              ),
+                            )
+                          : Icon(icon, size: 25, color: iconColor),
+                    ),
+                    const SizedBox(width: 18),
+                    Expanded(
+                      child: Text(
+                        label,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: selected
+                              ? SivraColors.warmIvory
+                              : SivraColors.warmIvory.withValues(alpha: 0.84),
+                          fontSize: 16,
+                          fontWeight: selected
+                              ? FontWeight.w600
+                              : FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    AnimatedContainer(
+                      duration: const Duration(milliseconds: 180),
+                      width: 27,
+                      height: 27,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        shape: selected ? BoxShape.circle : BoxShape.rectangle,
+                        borderRadius: selected
+                            ? null
+                            : BorderRadius.circular(7),
+                        color: selected
+                            ? SivraColors.bronze.withValues(alpha: 0.16)
+                            : Colors.transparent,
+                        border: Border.all(
+                          color: selected
+                              ? SivraColors.bronze
+                              : SivraColors.bronze.withValues(alpha: 0.55),
+                          width: 1.2,
+                        ),
+                      ),
+                      child: selected
+                          ? const Icon(
+                              Icons.check_rounded,
+                              size: 18,
+                              color: SivraColors.bronze,
+                            )
+                          : null,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _KnightIconPainter extends CustomPainter {
+  final Color color;
+
+  const _KnightIconPainter(this.color);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final scaleX = size.width / 28;
+    final scaleY = size.height / 28;
+    final path = Path()
+      ..moveTo(7 * scaleX, 24 * scaleY)
+      ..lineTo(22 * scaleX, 24 * scaleY)
+      ..lineTo(22 * scaleX, 21.5 * scaleY)
+      ..lineTo(19.5 * scaleX, 20 * scaleY)
+      ..cubicTo(
+        20.8 * scaleX,
+        17.2 * scaleY,
+        21.2 * scaleX,
+        14.2 * scaleY,
+        20.2 * scaleX,
+        11.3 * scaleY,
+      )
+      ..cubicTo(
+        19.2 * scaleX,
+        8.2 * scaleY,
+        16.5 * scaleX,
+        5.6 * scaleY,
+        12.7 * scaleX,
+        4.2 * scaleY,
+      )
+      ..lineTo(13.4 * scaleX, 8.2 * scaleY)
+      ..lineTo(9.2 * scaleX, 6.2 * scaleY)
+      ..lineTo(10.2 * scaleX, 10.2 * scaleY)
+      ..cubicTo(
+        7.8 * scaleX,
+        12.2 * scaleY,
+        6.7 * scaleX,
+        14.4 * scaleY,
+        7.2 * scaleX,
+        17.1 * scaleY,
+      )
+      ..cubicTo(
+        8.2 * scaleX,
+        15.8 * scaleY,
+        9.8 * scaleX,
+        14.9 * scaleY,
+        11.8 * scaleX,
+        14.4 * scaleY,
+      )
+      ..cubicTo(
+        13.8 * scaleX,
+        13.9 * scaleY,
+        15.4 * scaleX,
+        14.6 * scaleY,
+        15.8 * scaleX,
+        16.5 * scaleY,
+      )
+      ..cubicTo(
+        16.1 * scaleX,
+        18.1 * scaleY,
+        14.9 * scaleX,
+        19.5 * scaleY,
+        12.5 * scaleX,
+        20.2 * scaleY,
+      )
+      ..lineTo(7 * scaleX, 21.5 * scaleY)
+      ..close();
+
+    canvas.drawPath(path, Paint()..color = color);
+    canvas.drawCircle(
+      Offset(16.3 * scaleX, 9.2 * scaleY),
+      1.05 * scaleX,
+      Paint()..color = SivraColors.deepInk,
+    );
+  }
+
+  @override
+  bool shouldRepaint(_KnightIconPainter oldDelegate) {
+    return oldDelegate.color != color;
+  }
+}
+
+class _LearningMemoryStep extends StatelessWidget {
+  const _LearningMemoryStep();
 
   @override
   Widget build(BuildContext context) {
@@ -554,22 +877,96 @@ class _IdentityStep extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          _SectionLabel(text: '365 DAYS. 365 OPPORTUNITIES.'),
-          SizedBox(height: 18),
+          _SectionLabel(text: 'LEARNING MEMORY'),
+          SizedBox(height: 14),
           _HeroTitle(
-            text: 'FROM INFORMED → SHARP',
+            text: 'YOUR THINKING COMPOUNDS',
             textAlign: TextAlign.center,
+            fontSize: 37,
           ),
-          SizedBox(height: 44),
-          _FutureStatement(text: '365 opportunities to think better.'),
-          _FutureStatement(text: 'Every ritual compounds.'),
-          _FutureStatement(text: 'Every insight is saved.'),
-          _FutureStatement(
-            text: 'The archive becomes your personal thinking system.',
+          SizedBox(height: 22),
+          SivraMotif(),
+          SizedBox(height: 22),
+          Text(
+            'Every briefing, decision, and answer becomes part of your '
+            'learning memory.',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: SivraColors.mutedText,
+              fontSize: 16,
+              height: 1.5,
+            ),
           ),
-          _FutureStatement(
-            text: 'Make better decisions under pressure.',
-            emphasized: true,
+          SizedBox(height: 34),
+          _MemoryArchive(),
+        ],
+      ),
+    );
+  }
+}
+
+class _ReadyStep extends StatelessWidget {
+  final List<String> selectedRoles;
+
+  const _ReadyStep({required this.selectedRoles});
+
+  @override
+  Widget build(BuildContext context) {
+    final roles = selectedRoles.isEmpty
+        ? const <String>['Founder']
+        : selectedRoles;
+
+    return _CenteredStep(
+      verticalOffset: -48,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const _ReadySeal(),
+          const SizedBox(height: 28),
+          const _SectionLabel(text: 'PREPARED FOR YOU'),
+          const SizedBox(height: 14),
+          const _HeroTitle(
+            text: 'YOUR RITUAL IS READY',
+            textAlign: TextAlign.center,
+            fontSize: 38,
+          ),
+          const SizedBox(height: 22),
+          const SivraMotif(),
+          const SizedBox(height: 24),
+          const Text(
+            'Based on your selections:',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: SivraColors.mutedText,
+              fontSize: 15,
+              height: 1.4,
+            ),
+          ),
+          const SizedBox(height: 16),
+          ...roles.map(
+            (role) => Padding(
+              padding: const EdgeInsets.only(bottom: 7),
+              child: Text(
+                role == 'Product / Strategy' ? 'Product Strategy' : role,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: SivraColors.warmIvory,
+                  fontSize: 17,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 18),
+          const Text(
+            'Your edge is prepared.',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: SivraColors.bronze,
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0.2,
+            ),
           ),
         ],
       ),
@@ -662,18 +1059,26 @@ class _OnboardingHeader extends StatelessWidget {
 
 class _CenteredStep extends StatelessWidget {
   final Widget child;
+  final double verticalOffset;
 
-  const _CenteredStep({required this.child});
+  const _CenteredStep({required this.child, this.verticalOffset = 0});
 
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
+        final appliedOffset = constraints.maxHeight >= 650
+            ? verticalOffset
+            : verticalOffset / 4;
+
         return SingleChildScrollView(
           padding: const EdgeInsets.symmetric(vertical: 20),
           child: ConstrainedBox(
             constraints: BoxConstraints(minHeight: constraints.maxHeight - 40),
-            child: Center(child: child),
+            child: Transform.translate(
+              offset: Offset(0, appliedOffset),
+              child: Center(child: child),
+            ),
           ),
         );
       },
@@ -701,8 +1106,9 @@ class _HeroTitle extends StatelessWidget {
         color: SivraColors.warmIvory,
         fontSize: fontSize,
         height: 1.08,
-        fontWeight: FontWeight.w700,
-        letterSpacing: -1.1,
+        fontFamily: 'Playfair Display',
+        fontWeight: FontWeight.w600,
+        letterSpacing: -0.7,
         shadows: [
           Shadow(
             color: SivraColors.bronze.withValues(alpha: 0.18),
@@ -722,25 +1128,94 @@ class _SigilGlow extends StatelessWidget {
     return Container(
       width: 112,
       height: 112,
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: SivraColors.surface.withValues(alpha: 0.32),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            SivraColors.surfaceSoft.withValues(alpha: 0.9),
+            SivraColors.surface.withValues(alpha: 0.72),
+          ],
+        ),
+        border: Border.all(color: SivraColors.bronze.withValues(alpha: 0.32)),
         boxShadow: [
           BoxShadow(
-            color: SivraColors.bronze.withValues(alpha: 0.14),
-            blurRadius: 45,
-            spreadRadius: 6,
+            color: Colors.black.withValues(alpha: 0.28),
+            blurRadius: 24,
+            offset: const Offset(0, 12),
+          ),
+          BoxShadow(
+            color: SivraColors.bronze.withValues(alpha: 0.1),
+            blurRadius: 32,
+            spreadRadius: 2,
           ),
         ],
       ),
-      child: Image.asset(
-        'assets/brand/sivra-sigil.png',
-        color: SivraColors.bronze,
-        colorBlendMode: BlendMode.srcIn,
-      ),
+      child: const CustomPaint(painter: _SivraSigilPainter()),
     );
   }
+}
+
+class _SivraSigilPainter extends CustomPainter {
+  const _SivraSigilPainter();
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = size.shortestSide * 0.34;
+    final bronze = Paint()
+      ..color = SivraColors.bronze
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.25;
+    final softBronze = Paint()
+      ..color = SivraColors.bronze.withValues(alpha: 0.52)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 0.9;
+
+    canvas.drawCircle(center, radius, bronze);
+    canvas.drawCircle(center, radius * 0.52, softBronze);
+    canvas.drawLine(
+      Offset(center.dx, center.dy - radius - 7),
+      Offset(center.dx, center.dy + radius + 7),
+      softBronze,
+    );
+    canvas.drawLine(
+      Offset(center.dx - radius - 7, center.dy),
+      Offset(center.dx + radius + 7, center.dy),
+      softBronze,
+    );
+
+    final diamond = Path()
+      ..moveTo(center.dx, center.dy - radius - 10)
+      ..lineTo(center.dx + 3.5, center.dy - radius - 6.5)
+      ..lineTo(center.dx, center.dy - radius - 3)
+      ..lineTo(center.dx - 3.5, center.dy - radius - 6.5)
+      ..close();
+    canvas.drawPath(diamond, Paint()..color = SivraColors.bronze);
+
+    final textPainter = TextPainter(
+      text: const TextSpan(
+        text: 'S',
+        style: TextStyle(
+          color: SivraColors.bronze,
+          fontFamily: 'Playfair Display',
+          fontSize: 42,
+          fontWeight: FontWeight.w600,
+          height: 1,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    )..layout();
+    textPainter.paint(
+      canvas,
+      center - Offset(textPainter.width / 2, textPainter.height / 2),
+    );
+  }
+
+  @override
+  bool shouldRepaint(_SivraSigilPainter oldDelegate) => false;
 }
 
 class _RitualSummary extends StatelessWidget {
@@ -844,17 +1319,17 @@ class _SectionLabel extends StatelessWidget {
   }
 }
 
-class _RitualCard extends StatelessWidget {
-  const _RitualCard();
+class _RitualSequence extends StatelessWidget {
+  const _RitualSequence();
 
   @override
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
       constraints: const BoxConstraints(maxWidth: 390),
-      padding: const EdgeInsets.fromLTRB(26, 26, 26, 28),
+      padding: const EdgeInsets.fromLTRB(20, 22, 20, 22),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(30),
+        borderRadius: BorderRadius.circular(26),
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -877,40 +1352,36 @@ class _RitualCard extends StatelessWidget {
           ),
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: const Row(
         children: [
-          const _SectionLabel(text: 'TODAY’S INVESTMENT'),
-          const SizedBox(height: 12),
-          const Text(
-            '7 minutes.',
-            style: TextStyle(
-              color: SivraColors.warmIvory,
-              fontSize: 27,
-              fontWeight: FontWeight.w600,
-              letterSpacing: -0.4,
-            ),
+          Expanded(
+            child: _CardMetric(value: '2', label: 'Briefings'),
           ),
-          const SizedBox(height: 34),
-          Container(
-            height: 1,
-            color: SivraColors.warmIvory.withValues(alpha: 0.1),
+          _SequenceDot(),
+          Expanded(
+            child: _CardMetric(value: '3', label: 'Decisions'),
           ),
-          const SizedBox(height: 24),
-          const Row(
-            children: [
-              Expanded(
-                child: _CardMetric(value: '2', label: 'Briefings'),
-              ),
-              Expanded(
-                child: _CardMetric(value: '3', label: 'Decisions'),
-              ),
-              Expanded(
-                child: _CardMetric(value: '1', label: 'Articulation'),
-              ),
-            ],
+          _SequenceDot(),
+          Expanded(
+            child: _CardMetric(value: '1', label: 'Articulation'),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _SequenceDot extends StatelessWidget {
+  const _SequenceDot();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 3,
+      height: 3,
+      decoration: BoxDecoration(
+        color: SivraColors.bronze.withValues(alpha: 0.55),
+        shape: BoxShape.circle,
       ),
     );
   }
@@ -948,104 +1419,170 @@ class _CardMetric extends StatelessWidget {
   }
 }
 
-class _IdentityChip extends StatelessWidget {
-  final String label;
-  final bool selected;
-  final bool disabled;
-  final VoidCallback onTap;
-
-  const _IdentityChip({
-    required this.label,
-    required this.selected,
-    required this.disabled,
-    required this.onTap,
-  });
+class _MemoryArchive extends StatelessWidget {
+  const _MemoryArchive();
 
   @override
   Widget build(BuildContext context) {
-    return Semantics(
-      selected: selected,
-      button: true,
-      child: AnimatedOpacity(
-        duration: const Duration(milliseconds: 180),
-        opacity: disabled ? 0.42 : 1,
-        child: AnimatedScale(
-          duration: const Duration(milliseconds: 180),
-          curve: Curves.easeOutBack,
-          scale: selected ? 1.025 : 1,
-          child: Material(
-            color: Colors.transparent,
-            child: InkWell(
-              key: ValueKey(
-                selected ? 'role-chip-selected-$label' : 'role-chip-$label',
-              ),
-              onTap: disabled ? null : onTap,
-              borderRadius: BorderRadius.circular(24),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 220),
-                curve: Curves.easeOutCubic,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 21,
-                  vertical: 15,
-                ),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(24),
-                  color: selected
-                      ? SivraColors.bronze.withValues(alpha: 0.92)
-                      : SivraColors.surfaceSoft.withValues(alpha: 0.68),
-                  border: Border.all(
-                    color: selected
-                        ? SivraColors.bronze
-                        : SivraColors.warmIvory.withValues(alpha: 0.1),
-                  ),
-                  boxShadow: selected
-                      ? [
-                          BoxShadow(
-                            color: SivraColors.bronze.withValues(alpha: 0.22),
-                            blurRadius: 18,
-                            offset: const Offset(0, 8),
-                          ),
-                        ]
-                      : null,
-                ),
-                child: Text(
-                  label,
-                  style: TextStyle(
-                    color: selected
-                        ? SivraColors.deepInk
-                        : SivraColors.warmIvory,
-                    fontSize: 15,
-                    fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-                  ),
-                ),
-              ),
-            ),
-          ),
+    return Container(
+      width: double.infinity,
+      constraints: const BoxConstraints(maxWidth: 390),
+      padding: const EdgeInsets.all(22),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(28),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            SivraColors.surfaceSoft.withValues(alpha: 0.96),
+            SivraColors.surface.withValues(alpha: 0.78),
+          ],
         ),
+        border: Border.all(color: SivraColors.bronze.withValues(alpha: 0.22)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.28),
+            blurRadius: 30,
+            offset: const Offset(0, 16),
+          ),
+          BoxShadow(
+            color: SivraColors.bronze.withValues(alpha: 0.07),
+            blurRadius: 36,
+            spreadRadius: 1,
+          ),
+        ],
+      ),
+      child: const Column(
+        children: [
+          _MemoryRow(
+            icon: Icons.archive_outlined,
+            title: 'Your archive',
+            detail: 'The ideas worth returning to',
+          ),
+          _MemoryDivider(),
+          _MemoryRow(
+            icon: Icons.calendar_view_week_outlined,
+            title: 'Weekly recap',
+            detail: 'Patterns in how you decide',
+          ),
+          _MemoryDivider(),
+          _MemoryRow(
+            icon: Icons.auto_graph_rounded,
+            title: 'Learning memory',
+            detail: 'A sharper ritual over time',
+          ),
+        ],
       ),
     );
   }
 }
 
-class _FutureStatement extends StatelessWidget {
-  final String text;
-  final bool emphasized;
+class _MemoryRow extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String detail;
 
-  const _FutureStatement({required this.text, this.emphasized = false});
+  const _MemoryRow({
+    required this.icon,
+    required this.title,
+    required this.detail,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 19),
-      child: Text(
-        text,
-        textAlign: TextAlign.center,
-        style: TextStyle(
-          color: emphasized ? SivraColors.bronze : SivraColors.warmIvory,
-          fontSize: emphasized ? 22 : 20,
-          height: 1.35,
-          fontWeight: emphasized ? FontWeight.w700 : FontWeight.w400,
+    return Row(
+      children: [
+        Container(
+          width: 42,
+          height: 42,
+          decoration: BoxDecoration(
+            color: SivraColors.bronze.withValues(alpha: 0.08),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: SivraColors.bronze.withValues(alpha: 0.2),
+            ),
+          ),
+          child: Icon(icon, size: 21, color: SivraColors.bronze),
         ),
+        const SizedBox(width: 15),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(
+                  color: SivraColors.warmIvory,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 3),
+              Text(
+                detail,
+                style: const TextStyle(
+                  color: SivraColors.mutedText,
+                  fontSize: 13,
+                  height: 1.25,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _MemoryDivider extends StatelessWidget {
+  const _MemoryDivider();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 1,
+      margin: const EdgeInsets.symmetric(vertical: 16),
+      color: SivraColors.warmIvory.withValues(alpha: 0.08),
+    );
+  }
+}
+
+class _ReadySeal extends StatelessWidget {
+  const _ReadySeal();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 82,
+      height: 82,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            SivraColors.surfaceSoft.withValues(alpha: 0.9),
+            SivraColors.surface.withValues(alpha: 0.72),
+          ],
+        ),
+        border: Border.all(color: SivraColors.bronze.withValues(alpha: 0.34)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.28),
+            blurRadius: 22,
+            offset: const Offset(0, 10),
+          ),
+          BoxShadow(
+            color: SivraColors.bronze.withValues(alpha: 0.1),
+            blurRadius: 28,
+            spreadRadius: 2,
+          ),
+        ],
+      ),
+      child: const Icon(
+        Icons.check_rounded,
+        color: SivraColors.bronze,
+        size: 34,
       ),
     );
   }

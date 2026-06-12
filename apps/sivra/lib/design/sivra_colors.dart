@@ -8,7 +8,7 @@ class SivraColors {
   static const surfaceSoft = Color(0xFF141F33);
   static const warmIvory = Color(0xFFF2F0EA);
   static const mutedText = Color(0xFFAAB1BF);
-  static const bronze = Color(0xFFB89467);
+  static const bronze = Color(0xFFB08968);
   static const border = Color(0x24F2F0EA);
   static const softSage = Color(0xFFA8B5A2);
 }

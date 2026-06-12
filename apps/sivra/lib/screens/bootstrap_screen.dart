@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 
 import '../services/auth_service.dart';
+import '../services/debug_onboarding_override.dart';
 import '../services/entitlement_service.dart';
 import '../services/firestore_service.dart';
 import 'onboarding_screen.dart';
@@ -45,10 +47,12 @@ class _BootstrapScreenState extends State<BootstrapScreen> {
           debugPrint('Sivra startup profile unavailable: $error');
           return null;
         });
+    final forceOnboarding =
+        kDebugMode && await DebugOnboardingOverride.isEnabledFor(user.uid);
 
     return _BootstrapState(
       uid: user.uid,
-      hasProfile: profile?.focusAreas.isNotEmpty ?? false,
+      hasProfile: !forceOnboarding && (profile?.focusAreas.isNotEmpty ?? false),
       localOnly: profileUnavailable,
     );
   }

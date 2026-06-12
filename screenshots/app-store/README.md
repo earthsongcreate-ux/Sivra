@@ -11,10 +11,10 @@ Use this folder for raw and final App Store screenshot assets.
 
 - `01-today-ready.png`
 - `02-onboarding-focus.png`
-- `03-articulation-answer.png`
-- `04-source-context.png`
+- `03-daily-briefing.png`
+- `04-articulation-answer.png`
 - `05-learning-memory.png`
-- `06-paywall.png`
+- `06-weekly-recap.png`
 
 See `docs/setup/app-store-screenshot-capture-plan.md` for the storyboard and QA criteria.
 

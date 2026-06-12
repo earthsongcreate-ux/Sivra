@@ -47,6 +47,7 @@ make_screen() {
 
   local raw_path="$RAW_DIR/$raw"
   local output_path="$FINAL_DIR/$output"
+  local headline_size=58
   local screen="$TMP_DIR/screen.png"
   local mask="$TMP_DIR/mask.png"
   local clipped="$TMP_DIR/clipped.png"
@@ -63,6 +64,10 @@ make_screen() {
   if [[ ! -f "$LOGO" ]]; then
     echo "Missing brand logo: $LOGO" >&2
     exit 1
+  fi
+
+  if (( ${#headline} > 30 )); then
+    headline_size=52
   fi
 
   magick -size "${INNER_W}x${INNER_H}" "xc:$BACKGROUND" "$screen"
@@ -104,15 +109,35 @@ make_screen() {
     -fill "$ACCENT" \
     -stroke none \
     -draw "rectangle 300,382 1020,388" \
+    "$base"
+
+  magick -size "1180x82" \
+    -background none \
     -font Arial-Bold \
-    -pointsize 58 \
+    -pointsize "$headline_size" \
     -fill "$TEXT" \
-    -gravity North \
-    -annotate +0+130 "$headline" \
+    -gravity Center \
+    "caption:$headline" \
+    "$TMP_DIR/headline.png"
+  magick -size "1180x68" \
+    -background none \
     -font Arial \
     -pointsize 34 \
     -fill "$TEXT" \
-    -annotate +0+228 "$subheadline" \
+    -gravity Center \
+    "caption:$subheadline" \
+    "$TMP_DIR/subheadline.png"
+  magick "$base" "$TMP_DIR/headline.png" \
+    -gravity North \
+    -geometry "+0+112" \
+    -compose over \
+    -composite \
+    "$base"
+  magick "$base" "$TMP_DIR/subheadline.png" \
+    -gravity North \
+    -geometry "+0+212" \
+    -compose over \
+    -composite \
     "$base"
 
   magick "$LOGO" -resize "220x55>" "$logo_resized"
@@ -135,31 +160,31 @@ make_screen() {
 
 make_screen \
   "01-today-ready.png" \
-  "01-build-ai-fluency-daily.png" \
+  "01-walk-in-prepared.png" \
   "WALK INTO ANY ROOM PREPARED" \
   "A 7-minute ritual for founders and operators who think for a living."
 make_screen \
   "02-onboarding-focus.png" \
-  "02-choose-your-focus.png" \
+  "02-shape-how-you-think.png" \
   "SHAPE HOW YOU THINK" \
   "Choose the rooms you want to become sharper in."
 make_screen \
-  "03-articulation-answer.png" \
-  "03-practice-clear-answers.png" \
-  "PRACTICE CLEAR ANSWERS" \
-  "Turn AI ideas into plain executive language"
+  "03-daily-briefing.png" \
+  "03-separate-signal-from-noise.png" \
+  "SEPARATE SIGNAL FROM NOISE" \
+  "Make decisions from trusted sources, not headlines."
 make_screen \
-  "04-source-context.png" \
-  "04-review-trusted-sources.png" \
-  "THINK WITH BETTER SIGNAL" \
-  "Confidence starts with source quality."
+  "04-articulation-answer.png" \
+  "04-speak-with-clarity.png" \
+  "SPEAK WITH CLARITY UNDER PRESSURE" \
+  "Turn complex ideas into executive language."
 make_screen \
   "05-learning-memory.png" \
-  "05-track-learning-memory.png" \
-  "YOUR THINKING COMPOUNDS" \
-  "Save the ideas worth keeping."
+  "05-dont-lose-best-ideas.png" \
+  "DON'T LOSE YOUR BEST IDEAS" \
+  "Every answer becomes part of your learning memory."
 make_screen \
-  "06-paywall.png" \
-  "06-unlock-ai-packs.png" \
-  "CONTINUE YOUR DAILY REHEARSAL" \
-  "Personalized Daily Packs that sharpen thinking over time."
+  "06-weekly-recap.png" \
+  "06-your-thinking-compounds.png" \
+  "YOUR THINKING COMPOUNDS" \
+  "See how your judgment evolves week after week."

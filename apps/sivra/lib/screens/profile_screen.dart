@@ -1,8 +1,11 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../config/app_environment.dart';
 import '../models/daily_pack.dart';
 import '../navigation/app_destination.dart';
+import '../services/debug_onboarding_override.dart';
+import 'bootstrap_screen.dart';
 import 'content_qa_screen.dart';
 import 'diagnostics_screen.dart';
 import 'history_screen.dart';
@@ -17,6 +20,8 @@ class ProfileScreen extends StatelessWidget {
   final DailyPack pack;
   final bool? showDeveloperTools;
   final ValueChanged<AppDestination>? onSelectDestination;
+  final Future<void> Function()? onResetOnboarding;
+  final Future<void> Function(BuildContext context)? onResetOnboardingComplete;
 
   const ProfileScreen({
     super.key,
@@ -25,6 +30,8 @@ class ProfileScreen extends StatelessWidget {
     required this.pack,
     this.showDeveloperTools,
     this.onSelectDestination,
+    this.onResetOnboarding,
+    this.onResetOnboardingComplete,
   });
 
   @override
@@ -148,6 +155,15 @@ class ProfileScreen extends StatelessWidget {
                 subtitle: 'Review build and service configuration.',
                 onTap: () => _push(context, const DiagnosticsScreen()),
               ),
+              if (kDebugMode)
+                _ProfileAction(
+                  icon: Icons.restart_alt_rounded,
+                  title: 'Reset Onboarding',
+                  subtitle:
+                      'Debug only. Shows onboarding again without changing '
+                      'your profile.',
+                  onTap: () => _resetOnboarding(context),
+                ),
             ],
           ],
         ),
@@ -187,6 +203,78 @@ class ProfileScreen extends StatelessWidget {
       SnackBar(content: Text('$destination will be available here soon.')),
     );
   }
+
+  Future<void> _resetOnboarding(BuildContext context) async {
+    if (uid == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Onboarding reset requires a signed-in user.'),
+        ),
+      );
+      return;
+    }
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Reset onboarding?'),
+        content: const Text(
+          'This stores a local debug override for the current user and '
+          'restarts the app flow. Your profile, authentication, and RevenueCat '
+          'entitlements are not changed.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Reset'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !context.mounted) {
+      return;
+    }
+
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      final reset = onResetOnboarding;
+      if (reset != null) {
+        await reset();
+      } else {
+        await DebugOnboardingOverride.enableFor(uid!);
+      }
+    } catch (_) {
+      if (!context.mounted) {
+        return;
+      }
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text('Unable to reset onboarding for this user.'),
+        ),
+      );
+      return;
+    }
+
+    if (!context.mounted) {
+      return;
+    }
+
+    final completeReset = onResetOnboardingComplete;
+    if (completeReset != null) {
+      await completeReset(context);
+      return;
+    }
+
+    await Navigator.of(context).pushAndRemoveUntil<void>(
+      MaterialPageRoute(builder: (context) => const BootstrapScreen()),
+      (route) => false,
+    );
+  }
 }
 
 class _ProfileAction extends StatelessWidget {
@@ -207,6 +295,7 @@ class _ProfileAction extends StatelessWidget {
     return Card(
       margin: const EdgeInsets.only(bottom: 10),
       child: ListTile(
+        key: ValueKey('profile-action-$title'),
         leading: Icon(icon),
         title: Text(title),
         subtitle: Text(subtitle),

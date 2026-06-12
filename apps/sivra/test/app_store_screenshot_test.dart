@@ -15,6 +15,12 @@ void main() {
 
   setUpAll(() async {
     await _loadFont(family: 'Roboto', path: '/System/Library/Fonts/SFNS.ttf');
+    await _loadFont(family: 'Inter', path: 'assets/fonts/Inter-Regular.ttf');
+    await _loadFont(family: 'Inter', path: 'assets/fonts/Inter-SemiBold.ttf');
+    await _loadFont(
+      family: 'Playfair Display',
+      path: 'assets/fonts/PlayfairDisplay-SemiBold.ttf',
+    );
     await _loadFont(
       family: 'MaterialIcons',
       path:
@@ -66,19 +72,19 @@ void main() {
     );
   });
 
+  testWidgets('captures trusted briefing screenshot', (tester) async {
+    await pumpScreenshot(
+      tester,
+      screen: 'source-context',
+      fileName: '03-daily-briefing.png',
+    );
+  });
+
   testWidgets('captures articulation answer screenshot', (tester) async {
     await pumpScreenshot(
       tester,
       screen: 'articulation-answer',
-      fileName: '03-articulation-answer.png',
-    );
-  });
-
-  testWidgets('captures source context screenshot', (tester) async {
-    await pumpScreenshot(
-      tester,
-      screen: 'source-context',
-      fileName: '04-source-context.png',
+      fileName: '04-articulation-answer.png',
     );
   });
 
@@ -90,8 +96,12 @@ void main() {
     );
   });
 
-  testWidgets('captures paywall screenshot', (tester) async {
-    await pumpScreenshot(tester, screen: 'paywall', fileName: '06-paywall.png');
+  testWidgets('captures weekly recap screenshot', (tester) async {
+    await pumpScreenshot(
+      tester,
+      screen: 'weekly-recap',
+      fileName: '06-weekly-recap.png',
+    );
   });
 }
 
