@@ -113,14 +113,20 @@ void main() {
 
     await tester.tap(find.byKey(const ValueKey('nav-profile')));
     await tester.pumpAndSettle();
+    expect(find.text('Thinking Profile'), findsOneWidget);
+    expect(find.text('Edit Focus Areas'), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.text('Subscription'),
+      220,
+      scrollable: find.byType(Scrollable).last,
+    );
     expect(find.text('Subscription'), findsOneWidget);
-    expect(find.text('Focus Areas'), findsOneWidget);
     await tester.scrollUntilVisible(
       find.text('Support'),
       260,
       scrollable: find.byType(Scrollable).last,
     );
-    expect(find.text('Settings'), findsOneWidget);
+    expect(find.text('Settings'), findsNothing);
     expect(find.text('Support'), findsOneWidget);
 
     await tester.tap(find.byKey(const ValueKey('nav-today')));
@@ -264,7 +270,14 @@ void main() {
 
     expect(find.text('YOUR RITUAL IS READY'), findsOneWidget);
     expect(find.text('Founder'), findsOneWidget);
-    expect(find.text('Your edge is prepared.'), findsOneWidget);
+    expect(
+      find.text(
+        'The goal isn’t more information.\n'
+        'It’s clearer judgment.',
+      ),
+      findsOneWidget,
+    );
+    expect(find.text('Your edge is prepared.'), findsNothing);
     expect(find.text('Begin Today’s Ritual'), findsOneWidget);
 
     await tester.tap(find.byTooltip('Back'));
@@ -805,6 +818,76 @@ void main() {
     expect(find.text('Source Admin'), findsNothing);
     expect(find.text('Diagnostics'), findsNothing);
     expect(find.text('Reset Onboarding'), findsNothing);
+  });
+
+  testWidgets('Profile edits thinking focus without replaying onboarding', (
+    WidgetTester tester,
+  ) async {
+    final pack = DailyPack(
+      dayId: '2026-06-08',
+      focusAreas: const <String>['Product strategy'],
+      items: MockDailyPack.forFocus(const <String>['Product strategy']),
+    );
+    var savedRoles = <String>[];
+    var savedFocusAreas = <String>[];
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: SivraTheme.light(),
+        darkTheme: SivraTheme.dark(),
+        themeMode: ThemeMode.dark,
+        home: ProfileScreen(
+          uid: 'test-user',
+          firstName: 'Alex',
+          pack: pack,
+          initialThinkingRoles: const <String>['Founder'],
+          loadThinkingRoles: () async => const <String>[
+            'Founder',
+            'Product / Strategy',
+          ],
+          onSaveFocusAreas: (thinkingRoles, focusAreas) async {
+            savedRoles = thinkingRoles;
+            savedFocusAreas = focusAreas;
+          },
+          showDeveloperTools: false,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Thinking Profile'), findsOneWidget);
+    expect(find.text('Founder'), findsOneWidget);
+    expect(find.text('Product Strategy'), findsOneWidget);
+
+    await tester.tap(find.byKey(const ValueKey('edit-focus-areas')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('WHERE DO YOU WANT TO BECOME SHARPER?'), findsOneWidget);
+    expect(find.text('Begin Today’s Ritual'), findsNothing);
+    expect(find.textContaining('Continue Building Your'), findsNothing);
+
+    await tester.tap(find.byKey(const ValueKey('role-chip-selected-Founder')));
+    await tester.pump();
+    await tester.scrollUntilVisible(
+      find.text('Investor'),
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.tap(find.byKey(const ValueKey('role-chip-Investor')));
+    await tester.pump();
+    await tester.tap(find.byKey(const ValueKey('save-focus-areas')));
+    await tester.pumpAndSettle();
+
+    expect(savedRoles, containsAll(<String>['Product / Strategy', 'Investor']));
+    expect(savedRoles, isNot(contains('Founder')));
+    expect(
+      savedFocusAreas,
+      containsAll(<String>['Product strategy', 'GTM & sales']),
+    );
+    expect(find.text('Thinking Profile'), findsOneWidget);
+    expect(find.text('Product Strategy'), findsOneWidget);
+    expect(find.text('Investor'), findsOneWidget);
+    expect(find.text('Founder'), findsNothing);
   });
 
   testWidgets('developer Profile can reset onboarding for the current user', (

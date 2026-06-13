@@ -9,6 +9,7 @@ import 'drill_flow_screen.dart';
 import 'learning_memory_screen.dart';
 import 'onboarding_screen.dart';
 import 'paywall_screen.dart';
+import 'profile_screen.dart';
 import 'source_sheet.dart';
 import 'today_screen.dart';
 import 'weekly_recap_screen.dart';
@@ -39,6 +40,17 @@ class ScreenshotPreviewScreen extends StatelessWidget {
       'onboarding-ready' => _onboardingPreview(
         stepIndex: 4,
         includeSelections: true,
+      ),
+      'profile' => ProfileScreen(
+        uid: null,
+        firstName: 'Alex',
+        pack: _screenshotPack(),
+        initialThinkingRoles: const <String>[
+          'Founder',
+          'Product / Strategy',
+          'Investor',
+        ],
+        showDeveloperTools: false,
       ),
       'articulation-answer' => DrillFlowScreen(
         items: pack.items,

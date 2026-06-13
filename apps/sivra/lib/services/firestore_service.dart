@@ -130,6 +130,20 @@ class FirestoreService {
     });
   }
 
+  Future<void> updateFocusAreas({
+    required String uid,
+    required List<String> focusAreas,
+    required List<String> thinkingRoles,
+  }) async {
+    final now = FieldValue.serverTimestamp();
+    await _userDoc(uid).update(<Object, dynamic>{
+      'focusAreas': focusAreas,
+      'onboarding.thinkingRoles': thinkingRoles,
+      'focusUpdatedAt': now,
+      'updatedAt': now,
+    });
+  }
+
   Future<void> markDailyCompleted({
     required String uid,
     required String dayId,

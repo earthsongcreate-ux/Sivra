@@ -7,8 +7,81 @@ import '../design/sivra_colors.dart';
 import '../services/debug_onboarding_override.dart';
 import '../services/firestore_service.dart';
 import '../widgets/sivra_motif.dart';
-import 'app_shell.dart';
 import 'paywall_screen.dart';
+
+class ThinkingFocus {
+  ThinkingFocus._();
+
+  static const roleOptions = <String>[
+    'Founder',
+    'Product / Strategy',
+    'Operator',
+    'Investor',
+    'Builder',
+    'Marketing',
+    'Other',
+  ];
+
+  static String displayName(String role) {
+    return role == 'Product / Strategy' ? 'Product Strategy' : role;
+  }
+
+  static String roleForLegacyFocus(String focus) {
+    return switch (focus) {
+      'Product strategy' => 'Product / Strategy',
+      'GTM & sales' => 'Marketing',
+      'Hiring & team' => 'Founder',
+      'Infra & costs' => 'Operator',
+      _ => roleOptions.contains(focus) ? focus : 'Founder',
+    };
+  }
+
+  static List<String> rolesForFocusAreas(List<String> focusAreas) {
+    return focusAreas.map(roleForLegacyFocus).toSet().take(3).toList();
+  }
+
+  static List<String> focusAreasForRoles(Iterable<String> roles) {
+    final focusAreas = <String>[];
+
+    void add(String focus) {
+      if (!focusAreas.contains(focus)) {
+        focusAreas.add(focus);
+      }
+    }
+
+    for (final role in roles) {
+      switch (role) {
+        case 'Founder':
+          add('Product strategy');
+          add('GTM & sales');
+          add('Hiring & team');
+          break;
+        case 'Product / Strategy':
+          add('Product strategy');
+          break;
+        case 'Operator':
+          add('Infra & costs');
+          add('Hiring & team');
+          break;
+        case 'Investor':
+          add('Product strategy');
+          add('GTM & sales');
+          break;
+        case 'Builder':
+          add('Product strategy');
+          add('Infra & costs');
+          break;
+        case 'Marketing':
+          add('GTM & sales');
+          break;
+        default:
+          add('Product strategy');
+      }
+    }
+
+    return focusAreas.take(3).toList();
+  }
+}
 
 class OnboardingScreen extends StatefulWidget {
   final String uid;
@@ -37,16 +110,6 @@ class OnboardingScreen extends StatefulWidget {
 }
 
 class _OnboardingScreenState extends State<OnboardingScreen> {
-  static const _roleOptions = <String>[
-    'Founder',
-    'Product / Strategy',
-    'Operator',
-    'Investor',
-    'Builder',
-    'Marketing',
-    'Other',
-  ];
-
   final Set<String> _selectedRoles = {};
   int _stepIndex = 0;
   bool _saving = false;
@@ -65,7 +128,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   void initState() {
     super.initState();
     _selectedRoles.addAll(
-      widget.initialSelectedFocus.map(_roleForLegacyFocus).take(3),
+      widget.initialSelectedFocus.map(ThinkingFocus.roleForLegacyFocus).take(3),
     );
     _stepIndex = widget.initialStepIndex.clamp(0, _stepCount - 1);
     if (!widget.analyticsEnabled) {
@@ -133,7 +196,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     });
 
     final roles = _selectedRoles.toList();
-    final focusAreas = _focusAreasForRoles(roles);
+    final focusAreas = ThinkingFocus.focusAreasForRoles(roles);
 
     try {
       await FirestoreService.instance.upsertProfile(
@@ -204,7 +267,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       return;
     }
 
-    Navigator.of(context).pushReplacementNamed(AppShell.routeName);
+    Navigator.of(context).pushReplacementNamed('/app');
   }
 
   void _logEventSafely({
@@ -301,8 +364,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         ),
                         disabledForegroundColor: SivraColors.warmIvory
                             .withValues(alpha: 0.42),
-                        elevation: 8,
-                        shadowColor: SivraColors.bronze.withValues(alpha: 0.25),
+                        elevation: 0,
+                        shadowColor: Colors.transparent,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(22),
                         ),
@@ -326,9 +389,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     return switch (_stepIndex) {
       0 => const _PromiseStep(),
       1 => const _RitualStep(),
-      2 => _RoleStep(
+      2 => FocusAreaSelector(
         selected: _selectedRoles,
-        options: _roleOptions,
         onChanged: _setRoleSelected,
       ),
       3 => const _LearningMemoryStep(),
@@ -347,58 +409,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         _selectedRoles.remove(option);
       }
     });
-  }
-
-  String _roleForLegacyFocus(String focus) {
-    return switch (focus) {
-      'Product strategy' => 'Product / Strategy',
-      'GTM & sales' => 'Marketing',
-      'Hiring & team' => 'Founder',
-      'Infra & costs' => 'Operator',
-      _ => _roleOptions.contains(focus) ? focus : 'Founder',
-    };
-  }
-
-  List<String> _focusAreasForRoles(List<String> roles) {
-    final focusAreas = <String>[];
-
-    void add(String focus) {
-      if (!focusAreas.contains(focus)) {
-        focusAreas.add(focus);
-      }
-    }
-
-    for (final role in roles) {
-      switch (role) {
-        case 'Founder':
-          add('Product strategy');
-          add('GTM & sales');
-          add('Hiring & team');
-          break;
-        case 'Product / Strategy':
-          add('Product strategy');
-          break;
-        case 'Operator':
-          add('Infra & costs');
-          add('Hiring & team');
-          break;
-        case 'Investor':
-          add('Product strategy');
-          add('GTM & sales');
-          break;
-        case 'Builder':
-          add('Product strategy');
-          add('Infra & costs');
-          break;
-        case 'Marketing':
-          add('GTM & sales');
-          break;
-        default:
-          add('Product strategy');
-      }
-    }
-
-    return focusAreas.take(3).toList();
   }
 }
 
@@ -524,14 +534,13 @@ class _RitualStep extends StatelessWidget {
   }
 }
 
-class _RoleStep extends StatelessWidget {
+class FocusAreaSelector extends StatelessWidget {
   final Set<String> selected;
-  final List<String> options;
   final void Function(String option, bool selected) onChanged;
 
-  const _RoleStep({
+  const FocusAreaSelector({
+    super.key,
     required this.selected,
-    required this.options,
     required this.onChanged,
   });
 
@@ -539,7 +548,7 @@ class _RoleStep extends StatelessWidget {
   Widget build(BuildContext context) {
     return CustomScrollView(
       clipBehavior: Clip.none,
-      semanticChildCount: options.length,
+      semanticChildCount: ThinkingFocus.roleOptions.length,
       slivers: [
         const SliverPadding(
           padding: EdgeInsets.fromLTRB(0, 18, 0, 28),
@@ -572,12 +581,10 @@ class _RoleStep extends StatelessWidget {
         ),
         SliverList.separated(
           itemBuilder: (context, index) {
-            final option = options[index];
+            final option = ThinkingFocus.roleOptions[index];
             final isSelected = selected.contains(option);
             final disabled = !isSelected && selected.length >= 3;
-            final label = option == 'Product / Strategy'
-                ? 'Product Strategy'
-                : option;
+            final label = ThinkingFocus.displayName(option);
 
             return _FocusCard(
               label: label,
@@ -588,7 +595,7 @@ class _RoleStep extends StatelessWidget {
             );
           },
           separatorBuilder: (context, index) => const SizedBox(height: 12),
-          itemCount: options.length,
+          itemCount: ThinkingFocus.roleOptions.length,
         ),
         const SliverPadding(
           padding: EdgeInsets.fromLTRB(4, 20, 0, 8),
@@ -960,7 +967,8 @@ class _ReadyStep extends StatelessWidget {
           ),
           const SizedBox(height: 18),
           const Text(
-            'Your edge is prepared.',
+            'The goal isn’t more information.\n'
+            'It’s clearer judgment.',
             textAlign: TextAlign.center,
             style: TextStyle(
               color: SivraColors.bronze,
