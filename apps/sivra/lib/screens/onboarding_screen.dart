@@ -44,6 +44,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     'Investor',
     'Builder',
     'Marketing',
+    'Other',
   ];
 
   final Set<String> _selectedRoles = {};
@@ -557,7 +558,7 @@ class _RoleStep extends StatelessWidget {
                 SizedBox(height: 18),
                 Text(
                   'Choose up to three areas.\n'
-                  'Your daily ritual adapts to how you think.',
+                  'Sivra will tailor your daily thinking ritual around them.',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     color: SivraColors.mutedText,

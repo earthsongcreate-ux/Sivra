@@ -46,7 +46,9 @@ class TodayScreen extends StatefulWidget {
   final String? uid;
   final List<String>? initialFocusAreas;
   final bool? initialCompleted;
+  final String? initialFirstName;
   final bool loadRemote;
+  final DateTime? greetingTime;
   final ValueChanged<TodayDestinationData>? onDestinationDataChanged;
   final VoidCallback? onOpenProfile;
 
@@ -55,7 +57,9 @@ class TodayScreen extends StatefulWidget {
     this.uid,
     this.initialFocusAreas,
     this.initialCompleted,
+    this.initialFirstName,
     this.loadRemote = true,
+    this.greetingTime,
     this.onDestinationDataChanged,
     this.onOpenProfile,
   });
@@ -64,6 +68,8 @@ class TodayScreen extends StatefulWidget {
     super.key,
     this.initialFocusAreas = const <String>['Product strategy'],
     this.initialCompleted = false,
+    this.initialFirstName = 'Alex',
+    this.greetingTime,
   }) : uid = null,
        loadRemote = false,
        onDestinationDataChanged = null,
@@ -90,7 +96,7 @@ class _TodayScreenState extends State<TodayScreen> {
     if (!widget.loadRemote) {
       return _TodayState(
         uid: widget.uid,
-        firstName: 'Alex',
+        firstName: _firstName(widget.initialFirstName),
         focusAreas: focusAreas ?? const <String>[],
         entitlement: const EntitlementState.free(
           entitlementId: AppEnvironment.proEntitlementId,
@@ -139,7 +145,7 @@ class _TodayScreenState extends State<TodayScreen> {
 
     return _TodayState(
       uid: uid,
-      firstName: _firstName(profile?.firstName, user?.displayName),
+      firstName: _firstName(profile?.firstName),
       focusAreas: pack.focusAreas.isEmpty ? profileFocusAreas : pack.focusAreas,
       entitlement: entitlement,
       pack: pack,
@@ -159,15 +165,10 @@ class _TodayScreenState extends State<TodayScreen> {
     );
   }
 
-  String _firstName(String? profileName, String? displayName) {
+  String _firstName(String? profileName) {
     final profileFirstName = profileName?.trim();
     if (profileFirstName != null && profileFirstName.isNotEmpty) {
       return profileFirstName;
-    }
-
-    final trimmedDisplayName = displayName?.trim();
-    if (trimmedDisplayName != null && trimmedDisplayName.isNotEmpty) {
-      return trimmedDisplayName.split(RegExp(r'\s+')).first;
     }
 
     return 'there';
@@ -294,6 +295,7 @@ class _TodayScreenState extends State<TodayScreen> {
           onOpenPaywall: _openPaywall,
           openingPaywall: _openingPaywall,
           onOpenProfile: widget.onOpenProfile ?? () => _pushProfile(state),
+          greetingTime: widget.greetingTime ?? DateTime.now(),
         );
       },
     );
@@ -376,6 +378,7 @@ class _TodayContent extends StatelessWidget {
   final VoidCallback onOpenPaywall;
   final bool openingPaywall;
   final VoidCallback onOpenProfile;
+  final DateTime greetingTime;
 
   const _TodayContent({
     required this.state,
@@ -383,6 +386,7 @@ class _TodayContent extends StatelessWidget {
     required this.onOpenPaywall,
     required this.openingPaywall,
     required this.onOpenProfile,
+    required this.greetingTime,
   });
 
   @override
@@ -393,31 +397,21 @@ class _TodayContent extends StatelessWidget {
     final themes = state.focusAreas.isEmpty
         ? const <String>['General AI fluency']
         : state.focusAreas;
+    final greeting = _greetingFor(
+      greetingTime,
+      state.firstName == 'there' ? null : state.firstName,
+    );
 
     return Scaffold(
       appBar: AppBar(
         toolbarHeight: 84,
         titleSpacing: 20,
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              'Good Morning',
-              style: textTheme.bodyMedium?.copyWith(
-                color: colors.onSurface.withValues(alpha: 0.64),
-                letterSpacing: 0.2,
-              ),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              state.firstName == 'there' ? 'Welcome' : state.firstName,
-              style: textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.w600,
-                letterSpacing: -0.4,
-              ),
-            ),
-          ],
+        title: Text(
+          greeting,
+          style: textTheme.headlineSmall?.copyWith(
+            fontWeight: FontWeight.w600,
+            letterSpacing: -0.4,
+          ),
         ),
         actions: [
           IconButton(
@@ -509,6 +503,21 @@ class _TodayContent extends StatelessWidget {
     );
   }
 
+  static String _greetingFor(DateTime time, String? firstName) {
+    final trimmedName = firstName?.trim();
+    if (trimmedName == null || trimmedName.isEmpty) {
+      return 'Welcome Back';
+    }
+
+    final salutation = switch (time.hour) {
+      >= 5 && < 12 => 'Good Morning',
+      >= 12 && < 17 => 'Good Afternoon',
+      >= 17 && < 22 => 'Good Evening',
+      _ => 'Welcome Back',
+    };
+    return '$salutation, $trimmedName';
+  }
+
   static String _themeLabel(String value) {
     final normalized = value.trim().toLowerCase();
     if (normalized == 'infra & costs') {
@@ -557,9 +566,9 @@ class _DailyThought extends StatelessWidget {
           const SizedBox(height: 9),
           Text(
             '“${thought.quote}”',
-            maxLines: 1,
+            maxLines: 2,
             overflow: TextOverflow.ellipsis,
-            softWrap: false,
+            softWrap: true,
             strutStyle: const StrutStyle(
               fontSize: 16,
               height: 1.5,

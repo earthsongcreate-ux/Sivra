@@ -218,7 +218,7 @@ void main() {
     expect(
       find.text(
         'Choose up to three areas.\n'
-        'Your daily ritual adapts to how you think.',
+        'Sivra will tailor your daily thinking ritual around them.',
       ),
       findsOneWidget,
     );
@@ -232,6 +232,20 @@ void main() {
     expect(find.text('Product Strategy'), findsOneWidget);
     await tester.tap(find.text('Founder'));
     await tester.pump();
+    for (final label in <String>[
+      'Operator',
+      'Investor',
+      'Builder',
+      'Marketing',
+      'Other',
+    ]) {
+      await tester.scrollUntilVisible(
+        find.text(label),
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
+      expect(find.text(label), findsOneWidget);
+    }
     await tester.tap(find.text('Continue'));
     await tester.pumpAndSettle();
 
@@ -603,6 +617,47 @@ void main() {
     },
   );
 
+  testWidgets('Today greeting follows the local daypart and profile name', (
+    WidgetTester tester,
+  ) async {
+    for (final (hour, expected) in <(int, String)>[
+      (9, 'Good Morning, Alex'),
+      (13, 'Good Afternoon, Alex'),
+      (18, 'Good Evening, Alex'),
+      (23, 'Welcome Back, Alex'),
+    ]) {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: SivraTheme.light(),
+          darkTheme: SivraTheme.dark(),
+          themeMode: ThemeMode.dark,
+          home: TodayScreen.preview(greetingTime: DateTime(2026, 6, 13, hour)),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text(expected), findsOneWidget);
+      await tester.pumpWidget(const SizedBox.shrink());
+    }
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: SivraTheme.light(),
+        darkTheme: SivraTheme.dark(),
+        themeMode: ThemeMode.dark,
+        home: TodayScreen.preview(
+          initialFirstName: '',
+          greetingTime: DateTime(2026, 6, 13, 9),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Welcome Back'), findsOneWidget);
+    expect(find.textContaining(','), findsNothing);
+    expect(find.text('Welcome'), findsNothing);
+  });
+
   testWidgets('home header routes all secondary features through Profile', (
     WidgetTester tester,
   ) async {
@@ -611,15 +666,16 @@ void main() {
         theme: SivraTheme.light(),
         darkTheme: SivraTheme.dark(),
         themeMode: ThemeMode.dark,
-        home: const TodayScreen.preview(
+        home: TodayScreen.preview(
           initialFocusAreas: <String>['Product strategy', 'Infra & costs'],
+          greetingTime: DateTime(2026, 6, 13, 9),
         ),
       ),
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Good Morning'), findsOneWidget);
-    expect(find.text('Alex'), findsOneWidget);
+    expect(find.text('Good Morning, Alex'), findsOneWidget);
+    expect(find.text('Welcome'), findsNothing);
     expect(find.text('Today’s Thought'), findsOneWidget);
     expect(
       find.byWidgetPredicate(
@@ -640,9 +696,9 @@ void main() {
             widget.data!.endsWith('”'),
       ),
     );
-    expect(thoughtText.maxLines, 1);
+    expect(thoughtText.maxLines, 2);
     expect(thoughtText.overflow, TextOverflow.ellipsis);
-    expect(thoughtText.softWrap, isFalse);
+    expect(thoughtText.softWrap, isTrue);
     expect(find.byTooltip('Profile'), findsOneWidget);
     expect(find.text('TODAY’S RITUAL'), findsOneWidget);
     expect(find.text('Your thinking session is ready.'), findsOneWidget);
