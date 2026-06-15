@@ -810,6 +810,8 @@ void main() {
     );
     await tester.pumpAndSettle();
 
+    expect(find.text('Alex'), findsOneWidget);
+    expect(find.text('1 Focus Area Selected'), findsOneWidget);
     expect(find.text('Thinking Archive'), findsOneWidget);
     expect(find.text('History'), findsOneWidget);
     expect(find.text('Weekly Recap'), findsOneWidget);
@@ -855,6 +857,8 @@ void main() {
     );
     await tester.pumpAndSettle();
 
+    expect(find.text('Alex'), findsOneWidget);
+    expect(find.text('1 Focus Area Selected'), findsOneWidget);
     expect(find.text('Thinking Profile'), findsOneWidget);
     expect(find.text('Founder'), findsOneWidget);
     expect(find.text('Product Strategy'), findsOneWidget);
@@ -888,6 +892,7 @@ void main() {
     expect(find.text('Product Strategy'), findsOneWidget);
     expect(find.text('Investor'), findsOneWidget);
     expect(find.text('Founder'), findsNothing);
+    expect(find.text('2 Focus Areas Selected'), findsOneWidget);
   });
 
   testWidgets('developer Profile can reset onboarding for the current user', (

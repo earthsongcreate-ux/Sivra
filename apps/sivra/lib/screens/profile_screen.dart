@@ -53,10 +53,12 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   late List<String> _thinkingRoles;
+  late List<String> _focusAreas;
 
   @override
   void initState() {
     super.initState();
+    _focusAreas = List<String>.of(widget.pack.focusAreas);
     _thinkingRoles =
         widget.initialThinkingRoles ??
         ThinkingFocus.rolesForFocusAreas(widget.pack.focusAreas);
@@ -70,16 +72,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
 
     try {
-      final roles = loader != null
-          ? await loader()
-          : await FirestoreService.instance
-                .getProfile(widget.uid!)
-                .then((profile) => profile?.thinkingRoles ?? const <String>[]);
-      if (!mounted || roles.isEmpty) {
+      final profile = loader == null
+          ? await FirestoreService.instance.getProfile(widget.uid!)
+          : null;
+      final roles =
+          profile?.thinkingRoles ?? await loader?.call() ?? const <String>[];
+      if (!mounted) {
         return;
       }
       setState(() {
-        _thinkingRoles = roles.take(3).toList();
+        if (roles.isNotEmpty) {
+          _thinkingRoles = roles.take(3).toList();
+        }
+        if (profile != null) {
+          _focusAreas = List<String>.of(profile.focusAreas);
+        }
       });
     } catch (_) {
       // The profile remains useful with the focus areas from today's pack.
@@ -106,11 +113,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
                 const SizedBox(width: 16),
                 Expanded(
-                  child: Text(
-                    widget.firstName == 'there'
-                        ? 'Your profile'
-                        : widget.firstName,
-                    style: textTheme.headlineSmall,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        widget.firstName == 'there'
+                            ? 'Your profile'
+                            : widget.firstName,
+                        style: textTheme.headlineSmall,
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        _focusAreaCountLabel(_focusAreas.length),
+                        style: textTheme.bodySmall?.copyWith(
+                          color: SivraColors.mutedText,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
@@ -252,6 +271,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return trimmed.characters.first.toUpperCase();
   }
 
+  static String _focusAreaCountLabel(int count) {
+    final noun = count == 1 ? 'Focus Area' : 'Focus Areas';
+    return '$count $noun Selected';
+  }
+
   static void _push(BuildContext context, Widget screen) {
     Navigator.of(
       context,
@@ -279,6 +303,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
     setState(() {
       _thinkingRoles = updatedRoles;
+      _focusAreas = ThinkingFocus.focusAreasForRoles(updatedRoles);
     });
   }
 
