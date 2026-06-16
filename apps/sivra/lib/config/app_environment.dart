@@ -18,6 +18,7 @@ class AppEnvironment {
   );
   static const revenueCatIosApiKey = String.fromEnvironment(
     'SIVRA_REVENUECAT_IOS_KEY',
+    defaultValue: 'appl_uYZySRtnMxPqmQKjGTmOaUFlYEE',
   );
   static const revenueCatAndroidApiKey = String.fromEnvironment(
     'SIVRA_REVENUECAT_ANDROID_KEY',
