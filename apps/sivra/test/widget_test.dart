@@ -1101,6 +1101,95 @@ void main() {
     expect(find.text('TODAY’S RITUAL'), findsOneWidget);
   });
 
+  testWidgets('free user sees the Sivra Pro promotional card', (
+    WidgetTester tester,
+  ) async {
+    tester.view.physicalSize = const Size(800, 1800);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: SivraTheme.light(),
+        darkTheme: SivraTheme.dark(),
+        themeMode: ThemeMode.dark,
+        home: const TodayScreen.preview(),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.scrollUntilVisible(
+      find.text('Sivra Pro'),
+      300,
+      scrollable: find.byType(Scrollable).last,
+    );
+
+    expect(find.text('Sivra Pro'), findsOneWidget);
+    expect(find.textContaining('Personalized Daily Rituals'), findsOneWidget);
+    expect(find.textContaining('Thinking Archive'), findsOneWidget);
+    expect(find.textContaining('Weekly Recaps'), findsOneWidget);
+    expect(find.text('Learn More'), findsOneWidget);
+    expect(find.text('✓ Sivra Pro Active'), findsNothing);
+    expect(find.text('Manage Subscription'), findsNothing);
+  });
+
+  testWidgets('pro user sees the active membership card', (
+    WidgetTester tester,
+  ) async {
+    tester.view.physicalSize = const Size(800, 1800);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final openedUris = <Uri>[];
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: SivraTheme.light(),
+        darkTheme: SivraTheme.dark(),
+        themeMode: ThemeMode.dark,
+        home: TodayScreen.preview(
+          previewEntitlement: const EntitlementState(
+            isConfigured: true,
+            isPro: true,
+            entitlementId: 'sivra_pro',
+            activeProductId: 'sivra_annual_9999',
+            managementUrl: 'https://apps.apple.com/account/subscriptions',
+          ),
+          launchExternalUrl: (uri) async {
+            openedUris.add(uri);
+            return true;
+          },
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.scrollUntilVisible(
+      find.text('✓ Sivra Pro Active'),
+      300,
+      scrollable: find.byType(Scrollable).last,
+    );
+
+    expect(find.text('✓ Sivra Pro Active'), findsOneWidget);
+    expect(
+      find.textContaining('Personalized Daily Rituals Unlocked'),
+      findsOneWidget,
+    );
+    expect(find.textContaining('Thinking Archive Unlocked'), findsOneWidget);
+    expect(find.textContaining('Weekly Recaps Unlocked'), findsOneWidget);
+    expect(find.text('Manage Subscription'), findsOneWidget);
+    expect(find.text('Learn More'), findsNothing);
+
+    await tester.tap(find.text('Manage Subscription'));
+    await tester.pumpAndSettle();
+
+    expect(openedUris, <Uri>[
+      Uri.parse('https://apps.apple.com/account/subscriptions'),
+    ]);
+  });
+
   testWidgets('custom paywall emphasizes annual without a monthly trial', (
     WidgetTester tester,
   ) async {

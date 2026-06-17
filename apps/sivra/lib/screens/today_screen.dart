@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../data/mock_daily_pack.dart';
 import '../design/sivra_colors.dart';
@@ -51,6 +52,8 @@ class TodayScreen extends StatefulWidget {
   final DateTime? greetingTime;
   final ValueChanged<TodayDestinationData>? onDestinationDataChanged;
   final VoidCallback? onOpenProfile;
+  final EntitlementState? previewEntitlement;
+  final Future<bool> Function(Uri uri)? launchExternalUrl;
 
   const TodayScreen({
     super.key,
@@ -62,6 +65,8 @@ class TodayScreen extends StatefulWidget {
     this.greetingTime,
     this.onDestinationDataChanged,
     this.onOpenProfile,
+    this.previewEntitlement,
+    this.launchExternalUrl,
   });
 
   const TodayScreen.preview({
@@ -70,6 +75,8 @@ class TodayScreen extends StatefulWidget {
     this.initialCompleted = false,
     this.initialFirstName = 'Alex',
     this.greetingTime,
+    this.previewEntitlement,
+    this.launchExternalUrl,
   }) : uid = null,
        loadRemote = false,
        onDestinationDataChanged = null,
@@ -98,10 +105,12 @@ class _TodayScreenState extends State<TodayScreen> {
         uid: widget.uid,
         firstName: _firstName(widget.initialFirstName),
         focusAreas: focusAreas ?? const <String>[],
-        entitlement: const EntitlementState.free(
-          entitlementId: AppEnvironment.proEntitlementId,
-          message: 'Preview mode',
-        ),
+        entitlement:
+            widget.previewEntitlement ??
+            const EntitlementState.free(
+              entitlementId: AppEnvironment.proEntitlementId,
+              message: 'Preview mode',
+            ),
         pack: _previewPack(
           focusAreas ?? const <String>[],
           completed: completed == true,
@@ -256,6 +265,28 @@ class _TodayScreenState extends State<TodayScreen> {
     }
   }
 
+  Future<void> _manageSubscription(_TodayState state) async {
+    final managementUrl = state.entitlement.managementUrl?.trim();
+    final uri = managementUrl == null || managementUrl.isEmpty
+        ? null
+        : Uri.tryParse(managementUrl);
+    final managementUri =
+        uri ?? Uri.parse('https://apps.apple.com/account/subscriptions');
+    final launched = widget.launchExternalUrl != null
+        ? await widget.launchExternalUrl!(managementUri)
+        : await launchUrl(managementUri, mode: LaunchMode.externalApplication);
+
+    if (!launched && mounted) {
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          const SnackBar(
+            content: Text('Unable to open subscription settings.'),
+          ),
+        );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<_TodayState>(
@@ -293,6 +324,7 @@ class _TodayScreenState extends State<TodayScreen> {
           state: state,
           onStart: () => _openDailyPack(state),
           onOpenPaywall: _openPaywall,
+          onManageSubscription: () => _manageSubscription(state),
           openingPaywall: _openingPaywall,
           onOpenProfile: widget.onOpenProfile ?? () => _pushProfile(state),
           greetingTime: widget.greetingTime ?? DateTime.now(),
@@ -376,6 +408,7 @@ class _TodayContent extends StatelessWidget {
   final _TodayState state;
   final VoidCallback onStart;
   final VoidCallback onOpenPaywall;
+  final VoidCallback onManageSubscription;
   final bool openingPaywall;
   final VoidCallback onOpenProfile;
   final DateTime greetingTime;
@@ -384,6 +417,7 @@ class _TodayContent extends StatelessWidget {
     required this.state,
     required this.onStart,
     required this.onOpenPaywall,
+    required this.onManageSubscription,
     required this.openingPaywall,
     required this.onOpenProfile,
     required this.greetingTime,
@@ -493,10 +527,13 @@ class _TodayContent extends StatelessWidget {
                 ),
               ),
             ],
-            if (!state.entitlement.isPro) ...[
-              const SizedBox(height: 38),
-              _ProPrompt(onOpenPaywall: onOpenPaywall, opening: openingPaywall),
-            ],
+            const SizedBox(height: 38),
+            _ProPrompt(
+              isPro: state.entitlement.isPro,
+              onOpenPaywall: onOpenPaywall,
+              onManageSubscription: onManageSubscription,
+              opening: openingPaywall,
+            ),
           ],
         ),
       ),
@@ -756,10 +793,17 @@ class _RitualStreakCard extends StatelessWidget {
 }
 
 class _ProPrompt extends StatelessWidget {
+  final bool isPro;
   final VoidCallback onOpenPaywall;
+  final VoidCallback onManageSubscription;
   final bool opening;
 
-  const _ProPrompt({required this.onOpenPaywall, required this.opening});
+  const _ProPrompt({
+    required this.isPro,
+    required this.onOpenPaywall,
+    required this.onManageSubscription,
+    required this.opening,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -769,7 +813,11 @@ class _ProPrompt extends StatelessWidget {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: opening ? null : onOpenPaywall,
+        onTap: opening
+            ? null
+            : isPro
+            ? onManageSubscription
+            : onOpenPaywall,
         borderRadius: BorderRadius.circular(20),
         child: Container(
           decoration: BoxDecoration(
@@ -785,16 +833,20 @@ class _ProPrompt extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Sivra Pro',
+                  isPro ? '✓ Sivra Pro Active' : 'Sivra Pro',
                   style: textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w600,
                   ),
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  'Personalized Daily Rituals\n'
-                  'Thinking Archive\n'
-                  'Weekly Recaps',
+                  isPro
+                      ? 'Personalized Daily Rituals Unlocked\n'
+                            'Thinking Archive Unlocked\n'
+                            'Weekly Recaps Unlocked'
+                      : 'Personalized Daily Rituals\n'
+                            'Thinking Archive\n'
+                            'Weekly Recaps',
                   style: textTheme.bodyMedium?.copyWith(
                     height: 1.34,
                     color: colors.onSurface.withValues(alpha: 0.82),
@@ -805,12 +857,16 @@ class _ProPrompt extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      opening ? 'Opening…' : 'Learn More',
+                      isPro
+                          ? 'Manage Subscription'
+                          : opening
+                          ? 'Opening…'
+                          : 'Learn More',
                       style: textTheme.labelLarge?.copyWith(
                         color: SivraColors.bronze,
                       ),
                     ),
-                    if (!opening) ...[
+                    if (!opening && !isPro) ...[
                       const SizedBox(width: 6),
                       const Icon(
                         Icons.arrow_forward,
