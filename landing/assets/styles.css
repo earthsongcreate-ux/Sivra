@@ -613,6 +613,52 @@ h3 {
   text-align: center;
 }
 
+.store-badges {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  justify-content: center;
+  margin: 0 auto;
+  max-width: 1160px;
+  padding: 22px 22px 0;
+  text-align: center;
+}
+
+.store-badges a {
+  display: inline-flex;
+}
+
+.store-badges img {
+  display: block;
+  object-fit: contain;
+  width: auto;
+}
+
+.store-badges a img {
+  height: 52px;
+}
+
+.google-play-wrapper {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  pointer-events: none;
+  user-select: none;
+}
+
+.store-badges .google-play {
+  height: 48px;
+  opacity: 0.5;
+}
+
+.google-play-wrapper .coming-soon {
+  color: var(--muted);
+  font-size: 12px;
+  margin-top: 4px;
+  opacity: 0.7;
+}
+
 .store-option {
   align-items: center;
   display: flex;
