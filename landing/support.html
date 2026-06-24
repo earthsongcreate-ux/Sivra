@@ -30,19 +30,14 @@
     </main>
 
     <section class="download-options" aria-label="App download options">
-      <a class="download-badge" href="https://apps.apple.com/" aria-label="Download Sivra on the iOS App Store">
-        <span class="download-icon" aria-hidden="true">iOS</span>
-        <span>
-          <span class="download-label">Available on</span>
-          <span class="download-title">App Store</span>
-        </span>
-      </a>
-      <div class="download-badge is-disabled" aria-label="Sivra for Android coming soon">
-        <span class="download-icon" aria-hidden="true">A</span>
-        <span>
-          <span class="download-label">Android</span>
-          <span class="download-title">Coming soon</span>
-        </span>
+      <div class="store-option">
+        <a class="store-badge-link" href="https://apps.apple.com/" aria-label="Download Sivra on the App Store">
+          <img class="store-badge-image app-store-badge" src="./assets/store-badges/app-store.svg" alt="Download on the App Store">
+        </a>
+      </div>
+      <div class="store-option is-disabled" aria-label="Sivra for Android coming soon" aria-disabled="true">
+        <img class="store-badge-image google-play-badge" src="./assets/store-badges/google-play.png" alt="Get it on Google Play">
+        <span class="store-status">Coming soon</span>
       </div>
     </section>
 

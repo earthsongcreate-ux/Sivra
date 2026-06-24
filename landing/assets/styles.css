@@ -327,6 +327,12 @@ h3 {
   line-height: 1.5;
 }
 
+.pricing-assurance {
+  color: var(--muted);
+  font-size: 16px;
+  margin: -8px 0 18px;
+}
+
 .steps {
   display: grid;
   gap: 14px;
@@ -493,6 +499,11 @@ h3 {
   font-weight: 520;
 }
 
+.price-card .annual-trial-note {
+  color: rgba(242, 240, 234, 0.82);
+  font-weight: 620;
+}
+
 .fine-print {
   margin-top: 18px;
 }
@@ -591,7 +602,7 @@ h3 {
 }
 
 .download-options {
-  align-items: center;
+  align-items: flex-start;
   display: flex;
   flex-wrap: wrap;
   gap: 16px;
@@ -602,68 +613,41 @@ h3 {
   text-align: center;
 }
 
-.download-badge {
+.store-option {
   align-items: center;
-  background: rgba(16, 26, 43, 0.72);
-  border: 1px solid rgba(184, 148, 103, 0.34);
-  border-radius: 8px;
-  color: rgba(242, 240, 234, 0.78);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  min-width: 190px;
+}
+
+.store-badge-link {
   display: inline-flex;
-  gap: 14px;
-  justify-content: center;
-  min-height: 72px;
-  min-width: 236px;
-  padding: 14px 18px;
-  text-align: left;
-  text-decoration: none;
 }
 
-.download-primary {
-  background: rgba(184, 148, 103, 0.18);
-  border-color: rgba(184, 148, 103, 0.72);
-  box-shadow: 0 0 42px rgba(184, 148, 103, 0.1);
-  color: var(--text);
-}
-
-.download-badge:hover {
-  border-color: rgba(184, 148, 103, 0.58);
-  color: var(--text);
-}
-
-.download-badge.is-disabled {
-  color: rgba(170, 177, 191, 0.62);
-  cursor: default;
-}
-
-.download-icon {
-  align-items: center;
-  border: 1px solid rgba(184, 148, 103, 0.36);
-  border-radius: 6px;
-  color: var(--accent);
-  display: inline-flex;
-  flex: 0 0 auto;
-  font-size: 13px;
-  font-weight: 760;
-  height: 38px;
-  justify-content: center;
-  width: 44px;
-}
-
-.download-label,
-.download-title {
+.store-badge-image {
   display: block;
-  line-height: 1.1;
+  height: 56px;
+  object-fit: contain;
+  width: auto;
 }
 
-.download-label {
+.google-play-badge {
+  height: 84px;
+  margin: -14px 0;
+}
+
+.store-option.is-disabled {
+  cursor: default;
+  opacity: 0.45;
+  pointer-events: none;
+  user-select: none;
+}
+
+.store-status {
   color: var(--muted);
   font-size: 13px;
-}
-
-.download-title {
-  font-size: 20px;
-  font-weight: 660;
-  margin-top: 4px;
+  margin-top: 6px;
 }
 
 .footer-divider {
@@ -848,9 +832,8 @@ h3 {
     padding-right: 20px;
   }
 
-  .download-badge {
+  .store-option {
     min-width: 0;
-    text-align: center;
     width: 100%;
   }
 
